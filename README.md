@@ -7,6 +7,7 @@ Code corresponding to the paper
 by Sander Gribling and Sven Polak.
 
 It consists of three julia files:
+
 -MUBWriteSDPA.jl
 -ConstructReprSet.jl
 -DetermineValueMonomial.jl
@@ -24,6 +25,6 @@ A .dat-s file (SDPA-input) for the submatrix corresponding to the first basis el
 MUBWriteSDPASymBlockDiagSk(k,d,t,option)
 
 Here t is an integer. The argument "option" is optional, the value option=2 corresponds to level t+1/2.
-This function works at the moment up to level 6+1/2, because DetermineValueMonomial works for monomials corresponding to first basis elements up to this degree.
-For k at most 4 and d at most 6, the function works up to level 7+1/2.
+This function works in general up to level 6+1/2, because DetermineValueMonomial works for monomials corresponding to first basis elements up to this degree.
+For k at most 4 and d at most 6, the function DetermineValueMonomial (and hence the full function) works up to level 7+1/2.
 (The implemented symmetry reduction itself works for all degrees)
