@@ -12,7 +12,7 @@ It consists of three julia files:
 -ConstructReprSet.jl
 -DetermineValueMonomial.jl
 
-An .dat-s (SDPA-input) file for the full symmetry reduced sdp using the wreath product Sd wr Sk can be generated using the function
+A .dat-s (SDPA-input) file for the full symmetry reduced sdp using the wreath product Sd wr Sk can be generated using the function
 
 MUBWriteSDPASymBlockDiagFULL(k,d,t,option)
 
