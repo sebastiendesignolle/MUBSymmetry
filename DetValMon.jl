@@ -1,19 +1,22 @@
 function DetValMon(VarSet,DictValueMon,d,Ivec,Kvec,coeff)
 
+    #Initialize
+    NewVar = false
+
     #Reduce to the coset representative (lexicographically smallest element)
     Ivecnew, Kvecnew = minimumcyclicpartIK( Ivec, Kvec );
 
     #If this monomial has previously been declared a variable...
     if (Ivec,Kvec) in VarSet
         DictValueMon[(Ivec,Kvec)] = 1*coeff
-        return VarSet,DictValueMon
+        return NewVar,DictValueMon
     end
 
     #If the length of the monomial is 1, then its trace is 1
     lengthMonomial = length(Ivec)
     if (lengthMonomial == 1)
         DictValueMon[([-1],[-1])] = haskey(DictValueMon,([-1],[-1])) ? DictValueMon[([-1],[-1])]+1*coeff : 1*coeff
-        return VarSet,DictValueMon
+        return NewVar,DictValueMon
     end
 
     #If there is a basis which occurs twice subsequently: reduce using Projector/orthogonality-constraint
@@ -22,7 +25,7 @@ function DetValMon(VarSet,DictValueMon,d,Ivec,Kvec,coeff)
         if (Kvec[index1]==Kvec[index2])
             if (Ivec[index1] != Ivec[index2])
                 DictValueMon[([-1],[-1])] = haskey(DictValueMon,([-1],[-1])) ? DictValueMon[([-1],[-1])] : 0
-                return VarSet,DictValueMon;
+                return NewVar,DictValueMon
             else
                 deleteat!(Kvec, index1);
                 deleteat!(Ivec, index1);
@@ -65,7 +68,7 @@ function DetValMon(VarSet,DictValueMon,d,Ivec,Kvec,coeff)
                     deleteat!(Ipart1,index1)
 
                     #Identity:
-                    VarSet,DictValueMon = DetValMon(VarSet,DictValueMon,d,Ipart1,Kpart1,coeff*(1/BigFloat(d+1-length(Ivec_occurring_unique))))
+                    NewVar,DictValueMon = DetValMon(VarSet,DictValueMon,d,Ipart1,Kpart1,coeff*(1/BigFloat(d+1-length(Ivec_occurring_unique))))
                     #Minus the others:
                     for basiselt in Ivec_occurring_unique
                         TempDictionary = Dict{Tuple{Vector{Int},Vector{Int}},BigFloat}()
@@ -80,7 +83,7 @@ function DetValMon(VarSet,DictValueMon,d,Ivec,Kvec,coeff)
                     end
                     # return value_to_return/BigFloat(d+1-length(Ivec_occurring_unique));
                     # return VarSet,DictValueMon = DetValMon(VarSet,DictValueMon,d,Ivec,Kvec,coeff/BigFloat(d+1-length(Ivec_occurring_unique)); #I have modified the coefficient above instead
-                    return VarSet,DictValueMon
+                    return NewVar,DictValueMon
                 end
             end
         end
@@ -161,7 +164,7 @@ function DetValMon(VarSet,DictValueMon,d,Ivec,Kvec,coeff)
     Kvecnew=Currentelement[1];
 
     #We cannot reduce further: we add the monomial to the list of variables and assign it weight 1*coeff for the value dictionary
-    push!(VarSet,(Ivecnew,Kvecnew))
     DictValueMon[(Ivecnew,Kvecnew)] = 1*coeff
-    return VarSet,DictValueMon
+    NewVar = true
+    return NewVar,DictValueMon
 end

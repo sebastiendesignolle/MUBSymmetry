@@ -9,11 +9,8 @@ by Sander Gribling and Sven Polak.
 It consists of four julia files:
 
 -MUBWriteSDPA.jl
-
 -ConstructReprSet.jl
-
 -DetValMon.jl
-
 -HelperFunctions.jl
 
 A .dat-s (SDPA-input) file for the full symmetry reduced sdp using the wreath product Sd wr Sk can be generated using the function

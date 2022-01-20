@@ -153,11 +153,46 @@ end
 ## FUNCTIONS FOR Sk-ACTION (ON FIRST BASIS ELEMENTS ONLY, SEE SECTION 4)
 
 #generate per block (indexed by lambda) the possible pairs (semistandard tableaux, set partition)
-function generatePartitionsTableaux(k,t)
+#if reduced=true, REDUCE partitions using projector and MUB-constraints 
+function generatePartitionsTableaux(k,t, reduced=true)
     maxheight = min(k,t+1);
-
+    WordDict=Dict()
     Lambdas = ShapeAtMost(k,maxheight);
-    SPartitions = SetPartitionsAtMost(t,maxheight)
+    AllPartitions = SetPartitionsAtMost(t,maxheight)
+    NewPartitions = []
+
+    if reduced==true
+        for P in AllPartitions
+            #Create Kvec out of P.
+            Kvec  = zeros(Int,t);
+            piindex=0;
+            for Pi in P
+                Kvec[Pi].= piindex
+                piindex+=1
+            end
+
+            index1=1;
+            while index1 < length(Kvec)    #if there is a basis which occurs twice subsequently: reduce using Projector-constraint
+                index2 = index1+1 ;
+                index3 = index1+2 ;
+                if (Kvec[index1]==Kvec[index2])
+                    deleteat!(Kvec, index1);
+                    index1-=1;
+                elseif (index3 <= length(Kvec) && Kvec[index1]==Kvec[index3] ) ##reduce X_{index1,k} X_{index2,l} X{index1,k} 
+                    deleteat!(Kvec, index2);
+                    index1-=1;
+                end
+                index1+=1
+            end
+            Kvec= make_partition(Kvec)
+            WordDict[Kvec] =  P
+        end
+        for (Kvec, P) in WordDict 
+            push!(NewPartitions,P)
+        end    
+    else 
+        NewPartitions=AllPartitions
+    end
 
     blockSizes=[];
     #maxblockSize=0;
@@ -169,7 +204,7 @@ function generatePartitionsTableaux(k,t)
         GoodTableauxPartitions = []
         blockSize = 0;
 
-        for setpart in SPartitions
+        for setpart in NewPartitions
             r=size(setpart,1);
             candidates = AllCandidateVectors(k,r);
             for candidate in candidates
@@ -191,279 +226,142 @@ function generatePartitionsTableaux(k,t)
 
     println("blockSizes: $blockSizes")
 
-    return LambdaToBlocksDict, blockSizes
+    return LambdaToBlocksDict
 end
 
-#generate representative set for k bases and level t
-function generateRepresentativeSet(k,t)
+
+
+#generate per block (indexed by lambda) the possible pairs (semistandard tableaux, set partition)
+#if reduced=true, REDUCE partitions using projector and MUB-constraints 
+function generatePartitionsTableauxPlusHalf(k,t,reduced=true)
+    k-=1;  #act only on k-1 elements with Sk-1 for level t+1/2
     maxheight = min(k,t+1);
 
     Lambdas = ShapeAtMost(k,maxheight);
-    SPartitions = SetPartitionsAtMost(t,maxheight)
-
+    AllPartitions = SetPartitionsAtMost(t+1,min(k+1,t+1))
+    NewPartitions = []
     blockSizes=[];
+    WordDict=Dict()
     #maxblockSize=0;
 
+    if reduced==true
+        for P in AllPartitions
+            #Create Kvec out of P.
+            Kvec  = zeros(Int,t+1);
+            piindex=0;
+            for Pi in P
+                Kvec[Pi].= piindex
+                piindex+=1
+            end
 
+            index1=1;
+            while index1 < length(Kvec)    #if there is a basis which occurs twice subsequently: reduce using Projector-constraint
+                index2 = index1+1 ;
+                index3 = index1+2 ;
+                if (Kvec[index1]==Kvec[index2])
+                    deleteat!(Kvec, index1);
+                    index1-=1;
+                elseif (index3 <= length(Kvec) && Kvec[index1]==Kvec[index3] ) ##reduce X_{index1,k} X_{index2,l} X{index1,k} 
+                    deleteat!(Kvec, index2);
+                    index1-=1;
+                end
+                index1+=1
+            end
+            Kvec= make_partition(Kvec)
+            WordDict[Kvec] =  P
+        end
+        for (Kvec, P) in WordDict 
+            push!(NewPartitions,P)
+        end    
+    else 
+        NewPartitions=AllPartitions
+    end
 
-    RepresentativeSet=[];
+    LambdaToBlocksDict = Dict();
     for lambda in Lambdas
         #maxreprelementsize=0;
         Ystart = YoungTableau(lambda)
         GoodTableauxPartitions = []
         blockSize = 0;
 
-        for setpart in SPartitions
-            r=size(setpart,1);
+        for setpart in NewPartitions
+            r=size(setpart,1) -1;  #first partition will correspond to first symbol which is fixed
             candidates = AllCandidateVectors(k,r);
             for candidate in candidates
                 fill!(Ystart,candidate)
                 if (IsSemiStandard(Ystart))
                     #push a deepcopy so that we push the correct filling and do not change it afterwards.
                     GoodTableauxPartitions = push!(GoodTableauxPartitions,(deepcopy(Ystart),setpart))
+                    blockSize+=1;
                 end
             end
         end
         blockSize = size(GoodTableauxPartitions,1)
-
-        ReprArrayLambda=[];
-
-        for rowindex = 1:blockSize
-            sigmawithP1 = GoodTableauxPartitions[rowindex];
-
-            P1=sigmawithP1[2];
-            r=size(P1,1);
-
-            WordsWithSigns=[]
-
-            RowTableaux = AllRowEquivalentTableaux(sigmawithP1[1])
-            for rowtab in RowTableaux
-                ColTableaux = AllColumnSignTableaux(rowtab)
-                for coltab in ColTableaux
-                    FillVector = coltab[1].fill;
-                    #we combine the fillvector and the partition into a word of length t;
-                    Word = zeros(Int,t);
-                    for symbol = 2:r+1
-                        position = findall(x -> x.==symbol, FillVector)[1]
-                        Set = P1[symbol-1];
-                        Word[Set].=position;
-                    end
-                    Sign = coltab[2];
-                    WordsWithSigns=push!(WordsWithSigns, (Word, Sign))
-                end
-            end
-
-            ReprArrayLambda = push!(ReprArrayLambda,WordsWithSigns)
-        end
-
 
         if blockSize >0
             blockSizes=push!(blockSizes,blockSize);
-            RepresentativeSet=push!(RepresentativeSet,ReprArrayLambda)
+            LambdaToBlocksDict[lambda] = GoodTableauxPartitions
         end
 
     end
-
     println("blockSizes: $blockSizes")
-
-    return RepresentativeSet, blockSizes
+    return LambdaToBlocksDict
 end
 
-#generate "representative set" for k bases and level t:
-#here one does not sum over the column stabilizer (see Section 4)
-function generateRepresentativeColumnSet(k,t)
-    maxheight = min(k,t+1);
 
-    Lambdas = ShapeAtMost(k,maxheight);
-    SPartitions = SetPartitionsAtMost(t,maxheight)
+#generate representative set for k bases and level t
+function RepresentativeSkElement(indexobject, t, useColumnStabilizer = true)
+    GoodTableauxPartitions=indexobject 
+    blockSize = size(GoodTableauxPartitions,1)
 
-    blockSizes=[];
-    #maxblockSize=0;
+    ReprArrayLambda=[];
+    for rowindex = 1:blockSize
+        sigmawithP1 = GoodTableauxPartitions[rowindex];
+        P1=sigmawithP1[2];
+        r=size(P1,1);
+        WordsWithSigns=[]
 
-
-
-    RepresentativeSet=[];
-    for lambda in Lambdas
-        #maxreprelementsize=0;
-        Ystart = YoungTableau(lambda)
-        GoodTableauxPartitions = []
-        blockSize = 0;
-
-        for setpart in SPartitions
-            r=size(setpart,1);
-            candidates = AllCandidateVectors(k,r);
-            for candidate in candidates
-                fill!(Ystart,candidate)
-                if (IsSemiStandard(Ystart))
-                    #push a deepcopy so that we push the correct filling and do not change it afterwards.
-                    GoodTableauxPartitions = push!(GoodTableauxPartitions,(deepcopy(Ystart),setpart))
-                end
-            end
-        end
-        blockSize = size(GoodTableauxPartitions,1)
-
-        ReprArrayLambda=[];
-
-        for rowindex = 1:blockSize
-            sigmawithP1 = GoodTableauxPartitions[rowindex];
-
-            P1=sigmawithP1[2];
-            r=size(P1,1);
-
-            WordsWithSigns=[]
-
-            RowTableaux = AllRowEquivalentTableaux(sigmawithP1[1])
-            for rowtab in RowTableaux
-                FillVector = rowtab.fill;
+        RowTableaux = AllRowEquivalentTableaux(sigmawithP1[1])
+        for rowtab in RowTableaux
+            ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab,1)]
+            for coltab in ColTableaux
+                FillVector = coltab[1].fill;
                 #we combine the fillvector and the partition into a word of length t;
                 Word = zeros(Int,t);
                 for symbol = 2:r+1
-                    position = findfirst(x -> x.==symbol, FillVector)
+                    position = findall(x -> x.==symbol, FillVector)[1]
                     Set = P1[symbol-1];
                     Word[Set].=position;
                 end
-
-                WordsWithSigns=push!(WordsWithSigns, (Word, 1))
+                Sign = coltab[2];
+                WordsWithSigns=push!(WordsWithSigns, (Word, Sign))
             end
-
-            ReprArrayLambda = push!(ReprArrayLambda,WordsWithSigns)
-            #WORDSWITHSIGNS IS NOW THE (sigmawithP1)-th ELEMENT OF THE REPRESENTATIVE SET
-
         end
 
-
-        if blockSize >0
-            blockSizes=push!(blockSizes,blockSize);
-            RepresentativeSet=push!(RepresentativeSet,ReprArrayLambda)
-        end
-
+        ReprArrayLambda = push!(ReprArrayLambda,WordsWithSigns)
     end
-
-    return RepresentativeSet
+    return ReprArrayLambda
 end
+
 
 #generate representative set for k bases and level t+1/2
-function generateRepresentativeSetPlusHalf(k,t)
-    k-=1;  #act only on k-1 elements with Sk-1 for level t+1/2
-    maxheight = min(k,t+1);
+function RepresentativeSkElementPlusHalf(indexobject, t, useColumnStabilizer=true)
+    GoodTableauxPartitions=indexobject 
+    blockSize = size(GoodTableauxPartitions,1)
+    ReprArrayLambda=[];
+    for rowindex = 1:blockSize
+        sigmawithP1 = GoodTableauxPartitions[rowindex];
 
-    Lambdas = ShapeAtMost(k,maxheight);
-    SPartitions = SetPartitionsAtMost(t+1,min(k+1,t+1))
+        P1=sigmawithP1[2];
+        r=size(P1,1)-1;  #minus one because the first partition is fixed
 
-    blockSizes=[];
+        WordsWithSigns=[]
 
-    RepresentativeSet=[];
-    for lambda in Lambdas
-
-        Ystart = YoungTableau(lambda)
-        GoodTableauxPartitions = []
-        blockSize = 0;
-
-        for setpart in SPartitions
-            r=size(setpart,1) -1;  #first partition will correspond to first symbol which is fixed
-            candidates = AllCandidateVectors(k,r);
-            for candidate in candidates
-                fill!(Ystart,candidate)
-                if (IsSemiStandard(Ystart))
-                    #push a deepcopy so that we push the correct filling and do not change it afterwards.
-                    GoodTableauxPartitions = push!(GoodTableauxPartitions,(deepcopy(Ystart),setpart))
-                    blockSize+=1;
-                end
-            end
-        end
-
-        ReprArrayLambda=[];
-
-        for rowindex = 1:blockSize
-            sigmawithP1 = GoodTableauxPartitions[rowindex];
-
-            P1=sigmawithP1[2];
-            r=size(P1,1)-1;  #minus one because the first partition is fixed
-
-            WordsWithSigns=[]
-
-            RowTableaux = AllRowEquivalentTableaux(sigmawithP1[1])
-            for rowtab in RowTableaux
-                ColTableaux = AllColumnSignTableaux(rowtab)
-                for coltab in ColTableaux
-                    FillVector = coltab[1].fill;
-                    #we combine the fillvector and the partition into a word of length t;
-                    Word = zeros(Int,t+1);
-                    FirstSet = P1[1]
-                    Word[FirstSet].=1;
-                    for symbol = 2:r+1
-                        position = findall(x -> x.==symbol, FillVector)[1]
-                        Set = P1[symbol];
-                        Word[Set].=position+1;
-                    end
-                    Sign = coltab[2];
-                    popfirst!(Word)  #this is optional. We remove the first element from the word, so that we obtain a word of length t instead of a word of length t+1 starting with 1.
-                    WordsWithSigns=push!(WordsWithSigns, (Word, Sign))
-                end
-            end
-
-            ReprArrayLambda = push!(ReprArrayLambda,WordsWithSigns)
-
-            #WORDSWITHSIGNS IS NOW THE (sigmawithP1)-th ELEMENT OF THE REPRESENTATIVE SET
-        end
-
-
-        if blockSize >0
-            blockSizes=push!(blockSizes,blockSize);
-            RepresentativeSet=push!(RepresentativeSet,ReprArrayLambda)
-        end
-
-    end
-
-    println("blockSizes: $blockSizes")
-    return RepresentativeSet, blockSizes
-end
-
-#generate "representative set" for k bases and level t+1/2
-#here one does not sum over the column stabilizer (see Section 4)
-function generateRepresentativeColumnSetPlusHalf(k,t)
-    k-=1;  #act only on k-1 elements with Sk-1 for level t+1/2
-    maxheight = min(k,t+1);
-
-    Lambdas = ShapeAtMost(k,maxheight);
-    SPartitions = SetPartitionsAtMost(t+1,min(k+1,t+1))
-
-    blockSizes=[];
-
-    RepresentativeSet=[];
-    for lambda in Lambdas
-
-        Ystart = YoungTableau(lambda)
-        GoodTableauxPartitions = []
-        blockSize = 0;
-
-        for setpart in SPartitions
-            r=size(setpart,1) -1;  #first partition will correspond to first symbol which is fixed
-            candidates = AllCandidateVectors(k,r);
-            for candidate in candidates
-                fill!(Ystart,candidate)
-                if (IsSemiStandard(Ystart))
-                    #push a deepcopy so that we push the correct filling and do not change it afterwards.
-                    GoodTableauxPartitions = push!(GoodTableauxPartitions,(deepcopy(Ystart),setpart))
-                    blockSize+=1;
-                end
-            end
-
-        end
-
-        ReprArrayLambda=[];
-
-        for rowindex = 1:blockSize
-            sigmawithP1 = GoodTableauxPartitions[rowindex];
-
-            P1=sigmawithP1[2];
-            r=size(P1,1)-1;  #minus one because the first partition is fixed
-
-            WordsWithSigns=[]
-
-            RowTableaux = AllRowEquivalentTableaux(sigmawithP1[1])
-            for rowtab in RowTableaux
-                FillVector = rowtab.fill;
+        RowTableaux = AllRowEquivalentTableaux(sigmawithP1[1])
+        for rowtab in RowTableaux
+            ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab,1)]
+            for coltab in ColTableaux
+                FillVector = coltab[1].fill;
                 #we combine the fillvector and the partition into a word of length t;
                 Word = zeros(Int,t+1);
                 FirstSet = P1[1]
@@ -473,23 +371,17 @@ function generateRepresentativeColumnSetPlusHalf(k,t)
                     Set = P1[symbol];
                     Word[Set].=position+1;
                 end
+                Sign = coltab[2];
                 popfirst!(Word)  #this is optional. We remove the first element from the word, so that we obtain a word of length t instead of a word of length t+1 starting with 1.
-                WordsWithSigns=push!(WordsWithSigns, (Word, 1))
+                WordsWithSigns=push!(WordsWithSigns, (Word, Sign))
             end
-
-            ReprArrayLambda = push!(ReprArrayLambda,WordsWithSigns)
-
-            #WORDSWITHSIGNS IS NOW THE (sigmawithP1)-th ELEMENT OF THE REPRESENTATIVE SET
         end
 
-
-        if blockSize >0
-            blockSizes=push!(blockSizes,blockSize);
-            RepresentativeSet=push!(RepresentativeSet,ReprArrayLambda)
-        end
-
+        ReprArrayLambda = push!(ReprArrayLambda,WordsWithSigns)
+        #WORDSWITHSIGNS IS NOW THE (sigmawithP1)-th ELEMENT OF THE REPRESENTATIVE SET
     end
-    return RepresentativeSet
+
+    return ReprArrayLambda
 end
 
 #Compute the inner product between two representative elements (as polynomials - linear combinations of words), and then collect terms using the Sk-symmetry
@@ -632,7 +524,7 @@ end
 function GeneratePartitionsTableauxFull(d,k, t,option=1)
 
     if option==1
-        PWithQList = CreateRelevantPQiPartitions(d,k,t)
+        PWithQList = CreateRelevantPQiPartitionsV2(d,k,t)
     else
         PWithQList = CreatePQiPartitions(d,k,t)
     end
@@ -767,6 +659,8 @@ function GeneratePartitionsTableauxFull(d,k, t,option=1)
     println("sum of squares of block sizes: ",totaal)
     println("sum of block sizes: ",totaalsom)
     println("max block size: ",maxblokgrootte)
+    println("sum,max: ")
+    println(totaalsom," & ",maxblokgrootte)
     return MapFinalBlockDiagLambda
 end
 
@@ -774,7 +668,7 @@ end
 #option=1 corresponds to only the relevant (giving rise to nonzero rows) partitions assuming L=0 on the ideal Imub
 function GeneratePartitionsTableauxFullPlusHalf(d, k, t, option=1)
     if option==1
-        PWithQList = CreateRelevantPQiPartitions(d,k,t+1)
+        PWithQList = CreateRelevantPQiPartitionsV2(d,k,t+1)
     else
         PWithQList = CreatePQiPartitions(d,k,t+1)
     end
@@ -931,6 +825,8 @@ function GeneratePartitionsTableauxFullPlusHalf(d, k, t, option=1)
     println("sum of squares of block sizes: ",totaal)
     println("sum of block sizes: ",totaalsom)
     println("max block size: ",maxblokgrootte)
+    println("sum,max: ")
+    println(totaalsom," & ",maxblokgrootte)
     return MapFinalBlockDiagLambda
 end
 
@@ -953,7 +849,8 @@ end
 #Takes as input a tuple (P,Q,tau,sigma)
 #Outputs (WordsKWithSigns, WordsDWithSigns, P, Q) where the tensor product of the first two defines the noncommutative polynomial (by taking the signed sum of the entries) corresponding to the representative element.
 # P and Q are returned for convenience.
-function RepresentativeFullElement(indexobject)
+function RepresentativeFullElement(indexobject, useColumnStabilizer = true )
+
     P=indexobject[1]
     #determine t
     t=0;
@@ -974,7 +871,7 @@ function RepresentativeFullElement(indexobject)
         if (!isempty(tauitableau))
             RowTableaux = AllRowEquivalentTableaux(tauitableau)
             for rowtab in RowTableaux
-                ColTableaux = AllColumnSignTableaux(rowtab)
+                ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab,1)]
                 for coltab in ColTableaux
                     FillVector = coltab[1].fill;
                     #we combine the fillvector and the partition into a word of length t;
@@ -985,11 +882,11 @@ function RepresentativeFullElement(indexobject)
             ProductTableauVectorsWithSigns = TableauxVectorsProduct(ProductTableauVectorsWithSigns, TableauVectorsWithSigns)
         end
     end
-    WordsKWithSigns =[]
+    WordsKWithSigns =Tuple{Vector{Int8}, Int128}[]
     for ProductVectorsWithSigns in ProductTableauVectorsWithSigns
         FillVector= ProductVectorsWithSigns[1]
         sign= ProductVectorsWithSigns[2]
-        Word=zeros(Int,t)
+        Word=zeros(Int8,t)
         for symbol = 1:size(P,1)
             position = findall(x -> x.==(symbol+1), FillVector)[1]
             Set = P[symbol];
@@ -1000,22 +897,21 @@ function RepresentativeFullElement(indexobject)
 
     ############# MAKE D-OBJECT ###################
     #println("filledDtuple:", FilledDTableauxTuple)
-    WordsDWithSigns=[]
+    WordsDWithSigns=Vector{Tuple{Vector{Int8}, Int128}}[]
     qiindex=1;
-    ProductTableauVectorsWithSigns=[]
     for sigmaitableau in FilledDTableauxTuple
         Qi=Q[qiindex];
         lengthword = length(P[qiindex])
         qiindex+=1;
-        TableauVectorsWithSigns =[];
+        TableauVectorsWithSigns =Tuple{Vector{Int8}, Int128}[];
         RowTableaux = AllRowEquivalentTableaux(sigmaitableau)
         for rowtab in RowTableaux
-            ColTableaux = AllColumnSignTableaux(rowtab)
+            ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab,1)]
             for coltab in ColTableaux
                 FillVector = coltab[1].fill;
                 #we combine the fillvector and the partition into a word of length r_i;
                 ri = maximum(FillVector)-1;
-                Word = zeros(Int,lengthword);
+                Word = zeros(Int8,lengthword);
                 for symbol = 2:ri+1
                     position = findall(x -> x.==symbol, FillVector)[1]
                     Set = Qi[symbol-1];
@@ -1029,84 +925,12 @@ function RepresentativeFullElement(indexobject)
     end
 
     ########### END OF D-OBJECT ###########################
-
+    Q=convert(Vector{Vector{Vector{Int8}}},Q)
+    P=convert(Vector{Vector{Int8}},P)
     return (WordsKWithSigns, WordsDWithSigns, P, Q)
 end
 
-#Takes as input a tuple (P,Q,tau,sigma)
-#Outputs (WordsKWithSigns, WordsDWithSigns, P, Q) where the tensor product of the first two defines the noncommutative polynomial (by taking the signed sum of the entries) corresponding to the representative element except without summing over the column stabilizer.
-# P and Q are returned for convenience.
-function RepresentativeColumnElement(indexobject )
-    P=indexobject[1]
-    #determine t
-    t=0;
-    for Pi in P
-        t+=size(Pi,1)
-    end
-
-    #println("P: ", P)
-    Q=indexobject[2]
-    #println("Q: ", Q)
-    FilledKTableauxTuple = indexobject[3]
-    FilledDTableauxTuple = indexobject[4]
-
-    ### Make k-representative object
-    ProductTableauVectorsWithSigns=[]
-    for tauitableau in FilledKTableauxTuple
-        TableauVectorsWithSigns =[];
-        if (!isempty(tauitableau))
-            RowTableaux = AllRowEquivalentTableaux(tauitableau)
-            for rowtab in RowTableaux
-                    FillVector = rowtab.fill;
-                    #we combine the fillvector and the partition into a word of length t;
-                    TableauVectorsWithSigns=push!(TableauVectorsWithSigns, (FillVector,1))
-            end
-            ProductTableauVectorsWithSigns = TableauxVectorsProduct(ProductTableauVectorsWithSigns, TableauVectorsWithSigns)
-        end
-    end
-    WordsKWithSigns =[]
-    for ProductVectorsWithSigns in ProductTableauVectorsWithSigns
-        FillVector= ProductVectorsWithSigns[1]
-        sign= ProductVectorsWithSigns[2]
-        Word=zeros(Int,t)
-        for symbol = 1:size(P,1)
-            position = findall(x -> x.==(symbol+1), FillVector)[1]
-            Set = P[symbol];
-            Word[Set].=position;
-        end
-        push!(WordsKWithSigns,(Word, sign))
-    end
-
-    ############# MAKE D-OBJECT ###################
-    #println("filledDtuple:", FilledDTableauxTuple)
-    qiindex=1;
-    WordsDWithSigns=[]
-    for sigmaitableau in FilledDTableauxTuple
-        Qi=Q[qiindex];
-        lengthword = length(P[qiindex])
-        qiindex+=1;
-        TableauVectorsWithSigns =[];
-        RowTableaux = AllRowEquivalentTableaux(sigmaitableau)
-        for rowtab in RowTableaux
-                FillVector = rowtab.fill;
-                #we combine the fillvector and the partition into a word of length r_i;
-                ri = maximum(FillVector)-1;
-                Word = zeros(Int,lengthword);
-                for symbol = 2:ri+1
-                    position = findall(x -> x.==symbol, FillVector)[1]
-                    Set = Qi[symbol-1];
-                    Word[Set].=position;
-                end
-                TableauVectorsWithSigns=push!(TableauVectorsWithSigns, (Word, 1))
-        end
-        push!(WordsDWithSigns,TableauVectorsWithSigns)
-    end
-    ########### END OF D-OBJECT ###########################
-
-    return (WordsKWithSigns, WordsDWithSigns, P, Q)
-end
-
-function RepresentativeFullElementPlusHalf(indexobject )
+function RepresentativeFullElementPlusHalf(indexobject ,useColumnStabilizer=true )
     P=indexobject[1]
     #determine t
     t=0;
@@ -1129,7 +953,7 @@ function RepresentativeFullElementPlusHalf(indexobject )
         if (!isempty(tauitableau))
             RowTableaux = AllRowEquivalentTableaux(tauitableau)
             for rowtab in RowTableaux
-                ColTableaux = AllColumnSignTableaux(rowtab)
+                ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab,1)]
                 for coltab in ColTableaux
                     FillVector = coltab[1].fill;
                     #we combine the fillvector and the partition into a word of length t;
@@ -1140,7 +964,7 @@ function RepresentativeFullElementPlusHalf(indexobject )
             ProductTableauVectorsWithSigns = TableauxVectorsProduct(ProductTableauVectorsWithSigns, TableauVectorsWithSigns)
         end
     end
-    WordsKWithSigns =[]
+    WordsKWithSigns =Tuple{Vector{Int8}, Int128}[]
     for ProductVectorsWithSigns in ProductTableauVectorsWithSigns
         FillVector= ProductVectorsWithSigns[1]
         sign= ProductVectorsWithSigns[2]
@@ -1158,7 +982,7 @@ function RepresentativeFullElementPlusHalf(indexobject )
     ############# MAKE D-OBJECT ###################
     #println("filledDtuple:", FilledDTableauxTuple)
     qiindex=1;
-    WordsDWithSigns =[]
+    WordsDWithSigns=Vector{Tuple{Vector{Int8}, Int128}}[]
     for sigmaitableau in FilledDTableauxTuple
         Qi=Q[qiindex];
         lengthword = length(P[qiindex])
@@ -1166,7 +990,7 @@ function RepresentativeFullElementPlusHalf(indexobject )
         RowTableaux = AllRowEquivalentTableaux(sigmaitableau)
 
         for rowtab in RowTableaux
-            ColTableaux = AllColumnSignTableaux(rowtab)
+            ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab,1)]
             for coltab in ColTableaux
                 Word = zeros(Int,lengthword);
                 if qiindex == 1
@@ -1190,92 +1014,10 @@ function RepresentativeFullElementPlusHalf(indexobject )
         qiindex+=1;
     end
     ########### END OF D-OBJECT ###########################
-
+    Q=convert(Vector{Vector{Vector{Int8}}},Q)
+    P=convert(Vector{Vector{Int8}},P)
     return (WordsKWithSigns, WordsDWithSigns, P, Q)
 end
-
-function RepresentativeColumnElementPlusHalf(indexobject )
-    P=indexobject[1]
-    #determine t
-    t=0;
-    for Pi in P
-        t+=size(Pi,1)
-    end
-    t-=1
-    #sum of size(Pi,1) is t+1, we are in situation PlusHalf
-
-    #println("P: ", P)
-    Q=indexobject[2]
-    #println("Q: ", Q)
-    FilledKTableauxTuple = indexobject[3]
-    FilledDTableauxTuple = indexobject[4]
-
-    ### Make k-representative object
-    ProductTableauVectorsWithSigns=[]
-    for tauitableau in FilledKTableauxTuple
-        TableauVectorsWithSigns =[];
-        if (!isempty(tauitableau))
-            RowTableaux = AllRowEquivalentTableaux(tauitableau)
-            for rowtab in RowTableaux
-                    FillVector = rowtab.fill;
-                    #we combine the fillvector and the partition into a word of length t;
-                    Sign = 1;
-                    TableauVectorsWithSigns=push!(TableauVectorsWithSigns, (FillVector, Sign))
-            end
-            ProductTableauVectorsWithSigns = TableauxVectorsProduct(ProductTableauVectorsWithSigns, TableauVectorsWithSigns)
-        end
-    end
-    WordsKWithSigns =[]
-    for ProductVectorsWithSigns in ProductTableauVectorsWithSigns
-        FillVector= ProductVectorsWithSigns[1]
-        sign= ProductVectorsWithSigns[2]
-        Word=zeros(Int,t+1)
-        FirstSet = P[1]
-        Word[FirstSet].=1;
-        for symbol = 2:size(P,1)
-            position = findall(x -> x.==symbol, FillVector)[1]
-            Set = P[symbol];
-            Word[Set].=position+1;  ##S_{k-1} acts on 2,....,k
-        end
-        push!(WordsKWithSigns,(Word, sign))
-    end
-
-    ############# MAKE D-OBJECT ###################
-    #println("filledDtuple:", FilledDTableauxTuple)
-    qiindex=1;
-    WordsDWithSigns =[]
-    for sigmaitableau in FilledDTableauxTuple
-        Qi=Q[qiindex];
-        lengthword = length(P[qiindex])
-        TableauVectorsWithSigns =[];
-        RowTableaux = AllRowEquivalentTableaux(sigmaitableau)
-
-        for rowtab in RowTableaux
-                Word = zeros(Int,lengthword);
-                if qiindex == 1
-                    Word[Qi[1]].=1;
-                end
-                FillVector = rowtab.fill;
-                #we combine the fillvector and the partition into a word of length r_i;
-                ri = maximum(FillVector)-1;
-                for symbol = 2:ri+1
-                    position = findall(x -> x.==symbol, FillVector)[1]
-                    symboltranslation = qiindex==1 ? symbol : (symbol-1);
-                    Set = Qi[symboltranslation];
-                    position = qiindex==1 ? position+1 : position  #if qiindex=1 we have that S_{d-1} acts on 2,..,d. Otherwise S_d acts on [d].
-                    Word[Set].=position;
-                end
-                Sign = 1;
-                TableauVectorsWithSigns=push!(TableauVectorsWithSigns, (Word, Sign))
-        end
-        push!(WordsDWithSigns,TableauVectorsWithSigns)
-        qiindex+=1;
-    end
-    ########### END OF D-OBJECT ###########################
-
-    return (WordsKWithSigns, WordsDWithSigns, P, Q)
-end
-
 
 ## Functions to compute the inner product between two 'representative elements':
 # - the first element is a true representative element corresponding to a row index,
@@ -1340,8 +1082,8 @@ function ReduceInnerProductUsingImub(ReprRow, ReprCol)
     #we do the normal t-th level version. The corresponding representative set elements must be given as input arguments!
 
         #compute the inner product, this is costly!
-        RowColKDict = Dict{Vector{Int8},BigFloat}()
-        EntryDict = Dict{Tuple{Vector{Int8},Vector{Int8}},BigFloat}()
+        RowColKDict = Dict{Vector{Int8},Int128}()
+        EntryDict = Dict{Tuple{Vector{Int8},Vector{Int8}},Int128}()
 
         #FIRST WITHOUT REVERSING
         ReprKRow=ReprRow[1]; ReprDRow=ReprRow[2]; Prow = ReprRow[3]; Qrow = ReprRow[4];
@@ -1353,7 +1095,7 @@ function ReduceInnerProductUsingImub(ReprRow, ReprCol)
         for wordssign1 in ReprKRow
             firstpartword = wordssign1[1]
             for wordssign2 in ReprKCol
-                tempmonoom = make_partition([firstpartword;wordssign2[1]])
+                tempmonoom = make_partition(Int8[firstpartword;wordssign2[1]])
 
                 if !haskey(RowColKDict,tempmonoom)
                     RowColKDict[tempmonoom] = wordssign1[2]
@@ -1365,8 +1107,7 @@ function ReduceInnerProductUsingImub(ReprRow, ReprCol)
 
         ##For all k inner products, reduce d inner product depending on k inner product
         for (tempmonoomK, valueK)  in RowColKDict
-            Kpart=[];
-            ProductDArray = [(zeros(Int,2*t),1)];
+            ProductDArray = Tuple{Vector{Int8},Int128}[(zeros(Int8,2*t),1)];
             # println("NIEUW K-MONOOM")
             docheck1 = false
             docheck2= false
@@ -1393,7 +1134,7 @@ function ReduceInnerProductUsingImub(ReprRow, ReprCol)
                 end
 
                 #compute D-innerproduct for this part
-                DpartInnerProduct = Dict()
+                DpartInnerProduct = Dict{Vector{Int8},Int128}()
                 empty(DpartInnerProduct)
                 if IndexSet[1] != 0 && IndexSet[2] !=0
                     #InnerProduct(ReprDRow[IndexSet[1]],ReprDcol[IndexSet[2]])
@@ -1427,7 +1168,7 @@ function ReduceInnerProductUsingImub(ReprRow, ReprCol)
                     end
                 end
 
-                NewProductDArray = [];
+                NewProductDArray = Tuple{Vector{Int8},Int128}[];
                 for wordssign in ProductDArray
                     for (dword, signd) in DpartInnerProduct
                         # println("dword ",dword)
@@ -1459,7 +1200,6 @@ function ReduceInnerProductUsingImub(ReprRow, ReprCol)
                 # elseif (tempmonoomK[2*t]==tempmonoomK[1] && tempmonoomDim[2*t] != tempmonoomDim[1])
                 #     givesZeroElement=true;
                 # end
-
                 if !givesZeroElement
                     if !haskey(EntryDict,(tempmonoomDim, tempmonoomK))
                             EntryDict[(tempmonoomDim, tempmonoomK)] = valueK*wordssign[2]

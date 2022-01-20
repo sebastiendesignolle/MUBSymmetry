@@ -1,6 +1,15 @@
 
 ## Helper functions
 
+function AddVariable(VarSet,Dictionary)
+    for key in keys(Dictionary)
+        if !(key == ([-1],[-1])) && !(key in VarSet)
+            push!(VarSet,key)
+        end
+    end
+    return VarSet
+end
+
 
 function ReducedMonomials(d,k,t, reduced=false )
     if !reduced 
@@ -32,6 +41,88 @@ function ReducedMonomials(d,k,t, reduced=false )
     end
     return List;
 end
+
+
+
+function MonomialsSk(k,t )
+    Ps=SetPartitionsAtMost(t,k)
+    List = [];
+    for P in Ps 
+        #Create Kvec out of P
+        Kvec  = zeros(Int,t);
+        piindex=0;
+        for Pi in P
+            Kvec[Pi].= piindex
+            piindex+=1
+        end
+        push!(List,Kvec)
+    end
+    return List;
+end
+
+
+
+function ReducedMonomialsv2(d,k,t)
+    PPartitions = SetPartitionsAtMost(t,k)
+    MonomialsList =Vector{Tuple{Vector{Int8},Vector{Int8}}}()
+    for P in PPartitions
+        QPartitionslist =[];
+        for Pi in P
+            QiPartitions = SetPartitionsAtMost(length(Pi),d)
+            QPartitionslist = productQ(QPartitionslist,QiPartitions)
+        end
+        for Q in QPartitionslist
+            Qdef=flatten(Q)
+            #Make sure that if P consists of only one part, we still consider Q as a collection [Q_1].
+            if size(P,1)==1
+                 Test=Any[]
+                  push!(Test,Qdef)
+                  Qdef=Test
+            end
+
+            #Create Kvec and Ivec out of P,Qdef.
+            Kvec  = zeros(Int,t);
+            Ivec = zeros(Int,t);
+            piindex=0;
+            for Pi in P
+                Kvec[Pi].= piindex
+                piindex+=1
+
+                IvecPart = zeros(Int,size(Pi,1))
+                qiindex=0;
+                for Qii in Qdef[piindex]
+                    IvecPart[Qii].=qiindex
+                    qiindex+=1
+                end
+                Ivec[Pi].=IvecPart
+            end
+            #check if (Kvec, Ivec) gives zero row
+            givesZeroRow=false
+            index1=1
+            while index1 < length(Ivec)    #if there is a basis which occurs twice subsequently: reduce using Projector-constraint
+                index2 = index1+1 ;
+
+                if (Kvec[index1]==Kvec[index2] && Ivec[index1] != Ivec[index2])
+                        givesZeroRow=true;
+                        break;
+                end
+                if (Kvec[index1]==Kvec[index2] && Ivec[index1] == Ivec[index2])
+                    deleteat!(Kvec, index1);
+                    deleteat!(Ivec, index1);
+                    index1-=1;
+                end
+                index1+=1
+            end
+
+            if (!givesZeroRow)
+                push!(MonomialsList,(Ivec,Kvec))
+            end
+        end
+    end
+    return unique!(MonomialsList)
+end
+
+
 
 function  minimumcyclicpart( v )
     v=make_partition(v);
@@ -105,7 +196,7 @@ end
 # Creates a list with all pairs (P,Q) where P is a set partition of [t] in at most k parts, and Q is a tuple of set partitions (in at most d parts) that refines P
 function CreatePQiPartitions(d,k,t)
     PPartitions = SetPartitionsAtMost(t,k)
-    PWithQList = []
+    PWithQList = Tuple{Vector{Vector{Int8}}, Vector{Vector{Vector{Int8}}}}[]
     for P in PPartitions
         QPartitionslist =[];
         for Pi in P
@@ -120,6 +211,7 @@ function CreatePQiPartitions(d,k,t)
                   push!(Test,Qdef)
                   Qdef=Test
             end
+            Qdef=convert(Vector{Vector{Vector{Int8}}},Qdef)
             push!(PWithQList,(P,Qdef))
         end
     end
@@ -129,7 +221,7 @@ end
 # only create pairs (P,Q) that do not give rise to zero rows
 function CreateRelevantPQiPartitions(d,k,t)
     PPartitions = SetPartitionsAtMost(t,k)
-    PWithQList = []
+    PWithQList = Tuple{Vector{Vector{Int8}}, Vector{Vector{Vector{Int8}}}}[]
     for P in PPartitions
         QPartitionslist =[];
         for Pi in P
@@ -172,12 +264,92 @@ function CreateRelevantPQiPartitions(d,k,t)
             end
 
             if (!givesZeroRow)
+                Qdef=convert(Vector{Vector{Vector{Int8}}},Qdef)
                 push!(PWithQList,(P,Qdef))
             end
         end
     end
     return PWithQList
 end
+
+
+
+# only create pairs (P,Q) that do not give rise to zero rows and reduce using projector constraint AND MUB-constraint
+function CreateRelevantPQiPartitionsV2(d,k,t)
+    PPartitions = SetPartitionsAtMost(t,k)
+    PWithQList = Tuple{Vector{Vector{Int8}}, Vector{Vector{Vector{Int8}}}}[]
+    WordDict=Dict()
+    for P in PPartitions
+        QPartitionslist =[];
+        for Pi in P
+            QiPartitions = SetPartitionsAtMost(length(Pi),d)
+            QPartitionslist = productQ(QPartitionslist,QiPartitions)
+        end
+        for Q in QPartitionslist
+            Qdef=flatten(Q)
+            #Make sure that if P consists of only one part, we still consider Q as a collection [Q_1].
+            if size(P,1)==1
+                 Test=Any[]
+                  push!(Test,Qdef)
+                  Qdef=Test
+            end
+
+            #Create Kvec and Ivec out of P,Qdef.
+            Kvec  = zeros(Int,t);
+            Ivec = zeros(Int,t);
+            piindex=0;
+            for Pi in P
+                Kvec[Pi].= piindex
+                piindex+=1
+
+                IvecPart = zeros(Int,size(Pi,1))
+                qiindex=0;
+                for Qii in Qdef[piindex]
+                    IvecPart[Qii].=qiindex
+                    qiindex+=1
+                end
+                Ivec[Pi].=IvecPart
+            end
+            #check if (Kvec, Ivec) gives zero row
+            givesZeroRow=false
+            index1=1;
+            while index1 < length(Ivec)    #if there is a basis which occurs twice subsequently: reduce using Projector-constraint
+                index2 = index1+1 ;
+	        	index3 = index1+2 ;
+                if (Kvec[index1]==Kvec[index2] && Ivec[index1] != Ivec[index2])
+                        givesZeroRow=true;
+                        break;
+                end
+                if (Kvec[index1]==Kvec[index2] && Ivec[index1] == Ivec[index2])
+                    deleteat!(Kvec, index1);
+                    deleteat!(Ivec, index1);
+                    index1-=1;
+                elseif (index3 <= length(Ivec) && Kvec[index1]==Kvec[index3] && Ivec[index1] == Ivec[index3]) ##reduce X_{index1,k} X_{index2,l} X{index1,k} 
+                    deleteat!(Kvec, index2);
+                    deleteat!(Ivec, index2);
+                    index1-=1;
+                end
+                index1+=1
+            end
+
+            Ivec = renumberIdependingOnK(Ivec,Kvec)
+            Kvec= make_partition(Kvec)
+
+
+            if (!givesZeroRow)
+                Qdef=convert(Vector{Vector{Vector{Int8}}},Qdef)
+                WordDict[(Ivec,Kvec)] =  (P,Qdef)
+            end
+        end
+    end
+    PWithQList=[];
+    for (monomial, PWithQ) in WordDict 
+        push!(PWithQList,PWithQ)
+    end    
+    print(size(PWithQList))
+    return PWithQList
+end
+
 
 
 # Returns the lexicographically smallest element corresponding to Ivec, taking into account the KPartition (applies make_partition to each set Pi in KPartition)
