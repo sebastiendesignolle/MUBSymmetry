@@ -6,7 +6,7 @@ Code corresponding to the paper
 
 by Sander Gribling and Sven Polak.
 
-An update to the number of variables (improve the part to lexicographically reduce the monomials, and add a transpose-check (to reverse the order) in this part) was found after comparison with Erik Woodhead's code after discussions with Stefano Pironio and Erik Woodhead. Many thanks to both Stefano and Erik.
+An update to the number of variables (improve the part to lexicographically reduce the monomials, including a transpose-check to reverse the order) was found after comparison with Erik Woodhead's code and after discussions with Stefano Pironio and Erik Woodhead. Many thanks to both Erik and Stefano.
 
 It consists of four julia files:
 
