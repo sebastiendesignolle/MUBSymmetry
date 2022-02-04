@@ -6,6 +6,8 @@ Code corresponding to the paper
 
 by Sander Gribling and Sven Polak.
 
+An update to the number of variables (add a transpose-check in the code to lexicographically reduce the monomials) was found after comparison with Erik Woodhead's code after discussions with Stefano Pironio and Erik Woodhead. Many thanks to both Stefano and Erik.
+
 It consists of four julia files:
 
 -MUBWriteSDPA.jl
