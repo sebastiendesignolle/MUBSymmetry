@@ -1,7 +1,3 @@
-# using LinearAlgebra, GenericLinearAlgebra, AbstractAlgebra
-# using SymEngine, Combinatorics
-# using Printf
-
 setprecision(128)
 
 ## SIMPLE COMBINATORIAL FUNCTIONS TO WORK WITH TABLOIDS, TABLEAUX
