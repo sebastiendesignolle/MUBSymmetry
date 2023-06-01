@@ -645,11 +645,10 @@ function GeneratePartitionsTableauxFull(d, k, t, option=1)
             delete!(MapFinalBlockDiagLambda, key)
         end
     end
-    println("sum of squares of block sizes:", totaal)
-    println("sum of block sizes:", totaalsom)
-    println("max block size:", maxblokgrootte)
-    println("sum, max:")
-    println(totaalsom, " & ", maxblokgrootte)
+    println("sum of squares of block sizes: ", totaal)
+    println("sum of block sizes: ", totaalsom)
+    println("max block size: ", maxblokgrootte)
+    println("sum, max: ", totaalsom, " & ", maxblokgrootte)
     return MapFinalBlockDiagLambda
 end
 
