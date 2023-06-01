@@ -1016,7 +1016,7 @@ function CheckImubCommutatorsV2(d,k,t,option=0)
             WordIToTest = [0;wordI[2:degu+1];0;wordI[degu+2:degu+degv+1];0;wordI[degu+degv+2:end]]
             WordKToTest = [0;wordK[2:degu+1];0;wordK[degu+2:degu+degv+1];0;wordK[degu+degv+2:end]]
             WordIToTest2 = [0;wordI[degu+2:degu+degv+1];0;wordI[2:degu+1];0;wordI[degu+degv+2:end]]
-            WordKToTest2 = [0;wordK[degu+2:degu+degv+1];0;wordK[2:degu+1];0;;wordK[degu+degv+2:end]]
+            WordKToTest2 = [0;wordK[degu+2:degu+degv+1];0;wordK[2:degu+1];0;wordK[degu+degv+2:end]]
             VarSet,TempDict1 = DetValMon(VarSet,Dict{Tuple{Vector{Int},Vector{Int}},BigFloat}(),d,deepcopy(WordIToTest),deepcopy(WordKToTest),1)
             VarSet,TempDict2 = DetValMon(VarSet,Dict{Tuple{Vector{Int},Vector{Int}},BigFloat}(),d,deepcopy(WordIToTest2),deepcopy(WordKToTest2),-1)
             FinalDict = merge!(+,TempDict1,TempDict2)
@@ -1134,7 +1134,7 @@ function CheckImubCommutatorsSk(d,k,t,option=0)
         for testpair in testpairs 
             degu=testpair[1]; degv=testpair[2]; 
             WordKToTest = [0;wordK[2:degu+1];0;wordK[degu+2:degu+degv+1];0;wordK[degu+degv+2:end]]
-            WordKToTest2 = [0;wordK[degu+2:degu+degv+1];0;wordK[2:degu+1];0;;wordK[degu+degv+2:end]]
+            WordKToTest2 = [0;wordK[degu+2:degu+degv+1];0;wordK[2:degu+1];0;wordK[degu+degv+2:end]]
             NewVar,TempDict1 = DetValMon(VarSet,Dict{Tuple{Vector{Int},Vector{Int}},BigFloat}(),d,deepcopy(wordI),deepcopy(WordKToTest),1)
             #NewVar ? AddVariable(VarSet,TempDict1) : 0
             NewVar,TempDict2 = DetValMon(VarSet,Dict{Tuple{Vector{Int},Vector{Int}},BigFloat}(),d,deepcopy(wordI),deepcopy(WordKToTest2),-1)
