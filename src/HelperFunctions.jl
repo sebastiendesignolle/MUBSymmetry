@@ -413,7 +413,7 @@ end
 function toString(value, fractionalDigits::Integer)
     # Source: https://www.mail-archive.com/julia-users@googlegroups.com/msg28174.html
     #
-    # Converts the (Double64/Basic) value into a bare string without scientific notation, displaying the
+    # Converts the (Rational{BigInt}/Basic) value into a bare string without scientific notation, displaying the
     # given amount of fractional digits and not more, but less if the precision leads to a negative digit.
     #
 

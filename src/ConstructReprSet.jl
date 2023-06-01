@@ -168,7 +168,7 @@ function generatePartitionsTableaux(k, t, reduced=true)
             end
 
             index1 = 1
-            while index1 < length(Kvec)    #if there is a basis which occurs twice subsequently: reduce using Projector-constraint
+            while index1 < length(Kvec)    #if there is a basis which occurs twice subsequentlyreduce using Projector-constraint
                 index2 = index1 + 1
                 index3 = index1 + 2
                 if (Kvec[index1] == Kvec[index2])
@@ -219,7 +219,7 @@ function generatePartitionsTableaux(k, t, reduced=true)
         end
     end
 
-    println("blockSizes: $blockSizes")
+    println("blockSizes$blockSizes")
 
     return LambdaToBlocksDict
 end
@@ -248,7 +248,7 @@ function generatePartitionsTableauxPlusHalf(k, t, reduced=true)
             end
 
             index1 = 1
-            while index1 < length(Kvec)    #if there is a basis which occurs twice subsequently: reduce using Projector-constraint
+            while index1 < length(Kvec)    #if there is a basis which occurs twice subsequentlyreduce using Projector-constraint
                 index2 = index1 + 1
                 index3 = index1 + 2
                 if (Kvec[index1] == Kvec[index2])
@@ -296,7 +296,7 @@ function generatePartitionsTableauxPlusHalf(k, t, reduced=true)
             LambdaToBlocksDict[lambda] = GoodTableauxPartitions
         end
     end
-    println("blockSizes: $blockSizes")
+    println("blockSizes$blockSizes")
     return LambdaToBlocksDict
 end
 
@@ -314,7 +314,7 @@ function RepresentativeSkElement(indexobject, t, useColumnStabilizer=true)
 
         RowTableaux = AllRowEquivalentTableaux(sigmawithP1[1])
         for rowtab in RowTableaux
-            ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab, 1)]
+            ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) [(rowtab, 1)]
             for coltab in ColTableaux
                 FillVector = coltab[1].fill
                 #we combine the fillvector and the partition into a word of length t;
@@ -349,7 +349,7 @@ function RepresentativeSkElementPlusHalf(indexobject, t, useColumnStabilizer=tru
 
         RowTableaux = AllRowEquivalentTableaux(sigmawithP1[1])
         for rowtab in RowTableaux
-            ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab, 1)]
+            ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) [(rowtab, 1)]
             for coltab in ColTableaux
                 FillVector = coltab[1].fill
                 #we combine the fillvector and the partition into a word of length t;
@@ -432,7 +432,7 @@ function flatten(arr)
     return rst
 end
 
-# input: two arrays
+# inputtwo arrays
 # returns a list of tuples of products (x,y) with x in the first and y in the second array.
 # if you apply it iteratively, it returns tuples of tuples like (x,(y,(w,z))). The function flatten from above transforms this into the array [x,y,w,z].
 function productQ(Qfirst, Qj)
@@ -563,7 +563,7 @@ function GeneratePartitionsTableauxFull(d, k, t, option=1)
                         for tupleindex in 1:size(comp, 1)
                             ki = comp[tupleindex]
                             fillkivector = fillingkvector[startindex:startindex+ki-1]
-                            Ytab = ki > 0 ? YoungTableau(convert(Array{Int64, 1}, tableauxTuple[tupleindex])) : []
+                            Ytab = ki > 0 ? YoungTableau(convert(Array{Int64, 1}, tableauxTuple[tupleindex])) []
                             if ki > 0
                                 fill!(Ytab, fillkivector)
                                 if (ki > 0 && !IsSemiStandard(Ytab))
@@ -595,8 +595,8 @@ function GeneratePartitionsTableauxFull(d, k, t, option=1)
                                 #now we know the i for which lambda_i vdash k_i contains the sign ri
                                 #recover shape:
                                 shape = MapIndexToLambdaD[compindex]
-                                newSSYTS = CreateSemiStandardTableauxsizedmurForShape(d, Qisize, shape)  #NEW: QIsize
-                                newsize = isempty(newSSYTS) ? 0 : newsize * length(newSSYTS)
+                                newSSYTS = CreateSemiStandardTableauxsizedmurForShape(d, Qisize, shape)  #NEWQIsize
+                                newsize = isempty(newSSYTS) ? 0 newsize * length(newSSYTS)
                                 if newsize >= 1
                                     if (!isempty(allowedSSYTSD) && !isempty(newSSYTS))
                                         productofmorethanonetableau = true
@@ -645,10 +645,10 @@ function GeneratePartitionsTableauxFull(d, k, t, option=1)
             delete!(MapFinalBlockDiagLambda, key)
         end
     end
-    println("sum of squares of block sizes: ", totaal)
-    println("sum of block sizes: ", totaalsom)
-    println("max block size: ", maxblokgrootte)
-    println("sum,max: ")
+    println("sum of squares of block sizes:", totaal)
+    println("sum of block sizes:", totaalsom)
+    println("max block size:", maxblokgrootte)
+    println("sum, max:")
     println(totaalsom, " & ", maxblokgrootte)
     return MapFinalBlockDiagLambda
 end
@@ -671,9 +671,9 @@ function GeneratePartitionsTableauxFullPlusHalf(d, k, t, option=1)
     for PQ in PWithQList
         P = PQ[1]
         Q = PQ[2]
-        r = size(P, 1) - 1  #NOTE: first partition fixed (plus half), r one smaller.
+        r = size(P, 1) - 1  #NOTEfirst partition fixed (plus half), r one smaller.
         biggestQiSize = maximum([size(Qi, 1) for Qi in Q])  #determine the size of the largest Qi
-        biggestQiSize > t ? biggestQiSize = t : biggestQiSize = biggestQiSize
+        biggestQiSize > t ? biggestQiSize = t biggestQiSize = biggestQiSize
 
         FirstQi = Q[1]
         Qisize = size(FirstQi, 1)
@@ -715,7 +715,7 @@ function GeneratePartitionsTableauxFullPlusHalf(d, k, t, option=1)
                             for tupleindex in 1:size(comp, 1)
                                 ki = comp[tupleindex]
                                 fillkivector = fillingkvector[startindex:startindex+ki-1]
-                                Ytab = ki > 0 ? YoungTableau(convert(Array{Int64, 1}, tableauxTuple[tupleindex])) : []
+                                Ytab = ki > 0 ? YoungTableau(convert(Array{Int64, 1}, tableauxTuple[tupleindex])) []
                                 if ki > 0
                                     fill!(Ytab, fillkivector)
                                     if !IsSemiStandard(Ytab)
@@ -736,7 +736,7 @@ function GeneratePartitionsTableauxFullPlusHalf(d, k, t, option=1)
                                 FirstQi = Q[1]
                                 Qisize = size(FirstQi, 1)
                                 newSSYTS = CreateSemiStandardTableauxsizedmurForShape(d - 1, Qisize - 1, shapeFirstQi)
-                                newsize = isempty(newSSYTS) ? 0 : newsize * length(newSSYTS)
+                                newsize = isempty(newSSYTS) ? 0 newsize * length(newSSYTS)
                                 if newsize >= 1
                                     if (!isempty(allowedSSYTSD) && !isempty(newSSYTS))
                                         productofmorethanonetableau = true
@@ -759,7 +759,7 @@ function GeneratePartitionsTableauxFullPlusHalf(d, k, t, option=1)
                                     #recover shape:
                                     shape = MapIndexToLambdaD[compindex]
                                     newSSYTS = CreateSemiStandardTableauxsizedmurForShape(d, Qisize, shape)
-                                    newsize = isempty(newSSYTS) ? 0 : newsize * length(newSSYTS)
+                                    newsize = isempty(newSSYTS) ? 0 newsize * length(newSSYTS)
                                     if newsize >= 1
                                         if (!isempty(allowedSSYTSD) && !isempty(newSSYTS))
                                             productofmorethanonetableau = true
@@ -814,10 +814,10 @@ function GeneratePartitionsTableauxFullPlusHalf(d, k, t, option=1)
             delete!(MapFinalBlockDiagLambda, key)
         end
     end
-    println("sum of squares of block sizes: ", totaal)
-    println("sum of block sizes: ", totaalsom)
-    println("max block size: ", maxblokgrootte)
-    println("sum,max: ")
+    println("sum of squares of block sizes", totaal)
+    println("sum of block sizes", totaalsom)
+    println("max block size", maxblokgrootte)
+    println("sum,max")
     println(totaalsom, " & ", maxblokgrootte)
     return MapFinalBlockDiagLambda
 end
@@ -826,7 +826,7 @@ end
 function TableauxVectorsProduct(ProductArray, NewTableauVectorWithSigns)
     OutputWithSigns = []
     if (isempty(NewTableauVectorWithSigns) || isempty(ProductArray))
-        return isempty(ProductArray) ? NewTableauVectorWithSigns : ProductArray
+        return isempty(ProductArray) ? NewTableauVectorWithSigns ProductArray
     end
     for v1WithSign in ProductArray
         for v2WithSign in NewTableauVectorWithSigns
@@ -848,9 +848,9 @@ function RepresentativeFullElement(indexobject, useColumnStabilizer=true)
         t += size(Pi, 1)
     end
 
-    #println("P: ", P)
+    #println("P", P)
     Q = indexobject[2]
-    #println("Q: ", Q)
+    #println("Q", Q)
     FilledKTableauxTuple = indexobject[3]
     FilledDTableauxTuple = indexobject[4]
 
@@ -861,7 +861,7 @@ function RepresentativeFullElement(indexobject, useColumnStabilizer=true)
         if (!isempty(tauitableau))
             RowTableaux = AllRowEquivalentTableaux(tauitableau)
             for rowtab in RowTableaux
-                ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab, 1)]
+                ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) [(rowtab, 1)]
                 for coltab in ColTableaux
                     FillVector = coltab[1].fill
                     #we combine the fillvector and the partition into a word of length t;
@@ -896,7 +896,7 @@ function RepresentativeFullElement(indexobject, useColumnStabilizer=true)
         TableauVectorsWithSigns = Tuple{Vector{Int8}, Int128}[]
         RowTableaux = AllRowEquivalentTableaux(sigmaitableau)
         for rowtab in RowTableaux
-            ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab, 1)]
+            ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) [(rowtab, 1)]
             for coltab in ColTableaux
                 FillVector = coltab[1].fill
                 #we combine the fillvector and the partition into a word of length r_i;
@@ -930,9 +930,9 @@ function RepresentativeFullElementPlusHalf(indexobject, useColumnStabilizer=true
     t -= 1
     #sum of size(Pi,1) is t+1, we are in situation PlusHalf
 
-    #println("P: ", P)
+    #println("P", P)
     Q = indexobject[2]
-    #println("Q: ", Q)
+    #println("Q", Q)
     FilledKTableauxTuple = indexobject[3]
     FilledDTableauxTuple = indexobject[4]
 
@@ -943,7 +943,7 @@ function RepresentativeFullElementPlusHalf(indexobject, useColumnStabilizer=true
         if (!isempty(tauitableau))
             RowTableaux = AllRowEquivalentTableaux(tauitableau)
             for rowtab in RowTableaux
-                ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab, 1)]
+                ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) [(rowtab, 1)]
                 for coltab in ColTableaux
                     FillVector = coltab[1].fill
                     #we combine the fillvector and the partition into a word of length t;
@@ -980,7 +980,7 @@ function RepresentativeFullElementPlusHalf(indexobject, useColumnStabilizer=true
         RowTableaux = AllRowEquivalentTableaux(sigmaitableau)
 
         for rowtab in RowTableaux
-            ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab, 1)]
+            ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) [(rowtab, 1)]
             for coltab in ColTableaux
                 Word = zeros(Int, lengthword)
                 if qiindex == 1
@@ -991,9 +991,9 @@ function RepresentativeFullElementPlusHalf(indexobject, useColumnStabilizer=true
                 ri = maximum(FillVector) - 1
                 for symbol in 2:ri+1
                     position = findall(x -> x .== symbol, FillVector)[1]
-                    symboltranslation = qiindex == 1 ? symbol : (symbol - 1)
+                    symboltranslation = qiindex == 1 ? symbol (symbol - 1)
                     Set = Qi[symboltranslation]
-                    position = qiindex == 1 ? position + 1 : position  #if qiindex=1 we have that S_{d-1} acts on 2,..,d. Otherwise S_d acts on [d].
+                    position = qiindex == 1 ? position + 1 position  #if qiindex=1 we have that S_{d-1} acts on 2,..,d. Otherwise S_d acts on [d].
                     Word[Set] .= position
                 end
                 Sign = coltab[2]
@@ -1153,7 +1153,7 @@ function ReduceInnerProductUsingImub(ReprRow, ReprCol)
                 end
             else
                 #determine which of the indexsets is nonzero and take relevant repr set part
-                RelevantReprSetPart = IndexSet[1] != 0 ? ReprDRow[IndexSet[1]] : ReprDCol[IndexSet[2]]
+                RelevantReprSetPart = IndexSet[1] != 0 ? ReprDRow[IndexSet[1]] ReprDCol[IndexSet[2]]
                 for wordssign1 in RelevantReprSetPart
                     temppartmonoomDim = make_partition(deepcopy(wordssign1[1]))
                     if !haskey(DpartInnerProduct, temppartmonoomDim)
