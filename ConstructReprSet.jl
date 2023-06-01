@@ -7,11 +7,11 @@ setprecision(128)
 ## SIMPLE COMBINATORIAL FUNCTIONS TO WORK WITH TABLOIDS, TABLEAUX
 
 #generate the young shapes of a tableau of k boxes and height at most r
-function ShapeAtMost(k,r)
-    startset = collect(partitions(k,1))
+function ShapeAtMost(k, r)
+    startset = collect(partitions(k, 1))
 
-    for j=2:r
-        startset = append!(startset,collect(partitions(k,j)))
+    for j in 2:r
+        startset = append!(startset, collect(partitions(k, j)))
     end
 
     return startset
@@ -19,365 +19,359 @@ end
 
 #generate the young shapes of a tableau of k boxes and height at most r+1
 # WITH AT LEAST k-r BOXES IN FIRST ROW
-function ShapeAtMostrplus1Startkr(k,r)
-    shapes = ShapeAtMost(k,r+1)
-    newshapes = [];
+function ShapeAtMostrplus1Startkr(k, r)
+    shapes = ShapeAtMost(k, r + 1)
+    newshapes = []
     for shape in shapes
-        if shape[1]>=k-r
-            push!(newshapes,shape)
+        if shape[1] >= k - r
+            push!(newshapes, shape)
         end
     end
     return newshapes
 end
 
 function IsSemiStandard(Y)
-    issemi=true;
+    issemi = true
 
-    rowpartition = Y.part;
-    colpartition = conj(Y).part;
+    rowpartition = Y.part
+    colpartition = conj(Y).part
 
     #check rows
-    for i=1:size(rowpartition,1)
-        for j=1:(rowpartition[i]-1);
-            if (Y[i,j]> Y[i,j+1])
+    for i in 1:size(rowpartition, 1)
+        for j in 1:(rowpartition[i]-1)
+            if (Y[i, j] > Y[i, j+1])
                 return false
             end
         end
     end
 
     #check cols
-    for i=1:size(colpartition,1)
-        for j=1:(colpartition[i]-1);
-            if (Y[j,i]>= Y[j+1,i])
+    for i in 1:size(colpartition, 1)
+        for j in 1:(colpartition[i]-1)
+            if (Y[j, i] >= Y[j+1, i])
                 return false
             end
         end
     end
 
-    return issemi;
+    return issemi
 end
 
 #returns a list of all vectors of the form (k-r) ones and then once the elements 2,..,r+1 each (in each possible order)
-function AllCandidateVectors(k,r)
-    test = permutations(collect(2:r+1));
-    Candidates=[];
+function AllCandidateVectors(k, r)
+    test = permutations(collect(2:r+1))
+    Candidates = []
     for i in test
-        Candidates =push!(Candidates,[[ones(Int,k-r,1); i]...]);
+        Candidates = push!(Candidates, [[ones(Int, k - r, 1); i]...])
     end
     return Candidates
 end
 
 # function used to create all row equivalent tableaux
 # makes an array with all possible combinations of rows of A and rows of B
-function ArrayCombinations(A,B)
-    ret=[]
-    for i=1:size(A,1)
-        for j=1:size(B,1)
-            ret=push!(ret,cat(A[i],B[j];dims=1))
+function ArrayCombinations(A, B)
+    ret = []
+    for i in 1:size(A, 1)
+        for j in 1:size(B, 1)
+            ret = push!(ret, cat(A[i], B[j]; dims=1))
         end
     end
 
-    return ret;
+    return ret
 end
 
 #A is an array with signs, B is just an array of permutations
-function ArrayCombinationsWithSigns(A,B)
-    ret=[]
-    for i=1:size(A,1)
-        for j=1:size(B,1)
-            ret=push!(ret,(cat(A[i][1],B[j];dims=1),A[i][2]*levicivita(B[j])))
+function ArrayCombinationsWithSigns(A, B)
+    ret = []
+    for i in 1:size(A, 1)
+        for j in 1:size(B, 1)
+            ret = push!(ret, (cat(A[i][1], B[j]; dims=1), A[i][2] * levicivita(B[j])))
         end
     end
 
-    return ret;
+    return ret
 end
 
 #Returns an array with all young tableaux row equivalent to the given young tableau
 ##BE CAREFUL, MAY CHANGE Y!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function AllRowEquivalentTableaux(Y)
-    RowEquivalentTableaux=[];
-    rowpartition = Y.part;
+    RowEquivalentTableaux = []
+    rowpartition = Y.part
 
     #begin with first row
-    T=collect(multiset_permutations(Y[1,1:rowpartition[1]],rowpartition[1]));
+    T = collect(multiset_permutations(Y[1, 1:rowpartition[1]], rowpartition[1]))
     #add rows
-    for i=2:size(rowpartition,1)
-        T=ArrayCombinations(T, collect(multiset_permutations(Y[i,1:rowpartition[i]],rowpartition[i])))
+    for i in 2:size(rowpartition, 1)
+        T = ArrayCombinations(T, collect(multiset_permutations(Y[i, 1:rowpartition[i]], rowpartition[i])))
     end
 
-    for i=1:size(T,1)
-        fill!(Y,T[i])
-        RowEquivalentTableaux = push!(RowEquivalentTableaux,deepcopy(Y))
+    for i in 1:size(T, 1)
+        fill!(Y, T[i])
+        RowEquivalentTableaux = push!(RowEquivalentTableaux, deepcopy(Y))
     end
 
-    return RowEquivalentTableaux;
+    return RowEquivalentTableaux
 end
 
 #Returns an array consisting of tuples (P*Y, sign P), where P runs over the permutations in the column stabilizer of Y
 function AllColumnSignTableaux(Y)
-    ColumnSignTableaux=[];
-    rowpartition = Y.part;
-    Yprime=conj(Y)
-    colpartition = Yprime.part;
+    ColumnSignTableaux = []
+    rowpartition = Y.part
+    Yprime = conj(Y)
+    colpartition = Yprime.part
 
     #begin with first column, save permutation + sign
-    Tstart=collect(permutations(collect(1:colpartition[1])));
-    T=[];
-    for i=1:size(Tstart,1)
-        T=push!(T,(Tstart[i], levicivita(Tstart[i])))
+    Tstart = collect(permutations(collect(1:colpartition[1])))
+    T = []
+    for i in 1:size(Tstart, 1)
+        T = push!(T, (Tstart[i], levicivita(Tstart[i])))
     end
 
     #add columns, save permutation + sign
-    for i=2:size(colpartition,1)
-        T=ArrayCombinationsWithSigns(T, collect(permutations(collect(1:colpartition[i]))))
+    for i in 2:size(colpartition, 1)
+        T = ArrayCombinationsWithSigns(T, collect(permutations(collect(1:colpartition[i]))))
     end
 
     #make the new tableaux
-    for i=1:size(T,1)
-        start=1;
+    for i in 1:size(T, 1)
+        start = 1
         Yprimecopy = deepcopy(Yprime)
-        newfilling=[];
-        for j=1:rowpartition[1]
-            newfilling=append!(newfilling,Yprime[j,T[i][1][start:start+colpartition[j]-1]])
-            start+=colpartition[j]
+        newfilling = []
+        for j in 1:rowpartition[1]
+            newfilling = append!(newfilling, Yprime[j, T[i][1][start:start+colpartition[j]-1]])
+            start += colpartition[j]
         end
-        fill!(Yprimecopy,convert(Array{Int},newfilling))
+        fill!(Yprimecopy, convert(Array{Int}, newfilling))
         Ydash = conj(Yprimecopy)
 
-        ColumnSignTableaux = push!(ColumnSignTableaux,(Ydash,T[i][2]))
+        ColumnSignTableaux = push!(ColumnSignTableaux, (Ydash, T[i][2]))
     end
 
-    return ColumnSignTableaux;
+    return ColumnSignTableaux
 end
 
 ## FUNCTIONS FOR Sk-ACTION (ON FIRST BASIS ELEMENTS ONLY, SEE SECTION 4)
 
 #generate per block (indexed by lambda) the possible pairs (semistandard tableaux, set partition)
 #if reduced=true, REDUCE partitions using projector and MUB-constraints 
-function generatePartitionsTableaux(k,t, reduced=true)
-    maxheight = min(k,t+1);
-    WordDict=Dict()
-    Lambdas = ShapeAtMost(k,maxheight);
-    AllPartitions = SetPartitionsAtMost(t,maxheight)
+function generatePartitionsTableaux(k, t, reduced=true)
+    maxheight = min(k, t + 1)
+    WordDict = Dict()
+    Lambdas = ShapeAtMost(k, maxheight)
+    AllPartitions = SetPartitionsAtMost(t, maxheight)
     NewPartitions = []
 
-    if reduced==true
+    if reduced == true
         for P in AllPartitions
             #Create Kvec out of P.
-            Kvec  = zeros(Int,t);
-            piindex=0;
+            Kvec = zeros(Int, t)
+            piindex = 0
             for Pi in P
-                Kvec[Pi].= piindex
-                piindex+=1
+                Kvec[Pi] .= piindex
+                piindex += 1
             end
 
-            index1=1;
+            index1 = 1
             while index1 < length(Kvec)    #if there is a basis which occurs twice subsequently: reduce using Projector-constraint
-                index2 = index1+1 ;
-                index3 = index1+2 ;
-                if (Kvec[index1]==Kvec[index2])
-                    deleteat!(Kvec, index1);
-                    index1-=1;
-                elseif (index3 <= length(Kvec) && Kvec[index1]==Kvec[index3] ) ##reduce X_{index1,k} X_{index2,l} X{index1,k} 
-                    deleteat!(Kvec, index2);
-                    index1-=1;
+                index2 = index1 + 1
+                index3 = index1 + 2
+                if (Kvec[index1] == Kvec[index2])
+                    deleteat!(Kvec, index1)
+                    index1 -= 1
+                elseif (index3 <= length(Kvec) && Kvec[index1] == Kvec[index3]) ##reduce X_{index1,k} X_{index2,l} X{index1,k} 
+                    deleteat!(Kvec, index2)
+                    index1 -= 1
                 end
-                index1+=1
+                index1 += 1
             end
-            Kvec= make_partition(Kvec)
-            WordDict[Kvec] =  P
+            Kvec = make_partition(Kvec)
+            WordDict[Kvec] = P
         end
-        for (Kvec, P) in WordDict 
-            push!(NewPartitions,P)
-        end    
-    else 
-        NewPartitions=AllPartitions
+        for (Kvec, P) in WordDict
+            push!(NewPartitions, P)
+        end
+    else
+        NewPartitions = AllPartitions
     end
 
-    blockSizes=[];
+    blockSizes = []
     #maxblockSize=0;
 
-    LambdaToBlocksDict = Dict();
+    LambdaToBlocksDict = Dict()
     for lambda in Lambdas
         #maxreprelementsize=0;
         Ystart = YoungTableau(lambda)
         GoodTableauxPartitions = []
-        blockSize = 0;
+        blockSize = 0
 
         for setpart in NewPartitions
-            r=size(setpart,1);
-            candidates = AllCandidateVectors(k,r);
+            r = size(setpart, 1)
+            candidates = AllCandidateVectors(k, r)
             for candidate in candidates
-                fill!(Ystart,candidate)
+                fill!(Ystart, candidate)
                 if (IsSemiStandard(Ystart))
                     #push a deepcopy so that we push the correct filling and do not change it afterwards.
-                    GoodTableauxPartitions = push!(GoodTableauxPartitions,(deepcopy(Ystart),setpart))
+                    GoodTableauxPartitions = push!(GoodTableauxPartitions, (deepcopy(Ystart), setpart))
                 end
             end
         end
-        blockSize = size(GoodTableauxPartitions,1)
+        blockSize = size(GoodTableauxPartitions, 1)
 
-        if blockSize >0
-            blockSizes=push!(blockSizes,blockSize);
+        if blockSize > 0
+            blockSizes = push!(blockSizes, blockSize)
             LambdaToBlocksDict[lambda] = GoodTableauxPartitions
         end
-
     end
 
     println("blockSizes: $blockSizes")
 
     return LambdaToBlocksDict
 end
-
-
 
 #generate per block (indexed by lambda) the possible pairs (semistandard tableaux, set partition)
 #if reduced=true, REDUCE partitions using projector and MUB-constraints 
-function generatePartitionsTableauxPlusHalf(k,t,reduced=true)
-    k-=1;  #act only on k-1 elements with Sk-1 for level t+1/2
-    maxheight = min(k,t+1);
+function generatePartitionsTableauxPlusHalf(k, t, reduced=true)
+    k -= 1  #act only on k-1 elements with Sk-1 for level t+1/2
+    maxheight = min(k, t + 1)
 
-    Lambdas = ShapeAtMost(k,maxheight);
-    AllPartitions = SetPartitionsAtMost(t+1,min(k+1,t+1))
+    Lambdas = ShapeAtMost(k, maxheight)
+    AllPartitions = SetPartitionsAtMost(t + 1, min(k + 1, t + 1))
     NewPartitions = []
-    blockSizes=[];
-    WordDict=Dict()
+    blockSizes = []
+    WordDict = Dict()
     #maxblockSize=0;
 
-    if reduced==true
+    if reduced == true
         for P in AllPartitions
             #Create Kvec out of P.
-            Kvec  = zeros(Int,t+1);
-            piindex=0;
+            Kvec = zeros(Int, t + 1)
+            piindex = 0
             for Pi in P
-                Kvec[Pi].= piindex
-                piindex+=1
+                Kvec[Pi] .= piindex
+                piindex += 1
             end
 
-            index1=1;
+            index1 = 1
             while index1 < length(Kvec)    #if there is a basis which occurs twice subsequently: reduce using Projector-constraint
-                index2 = index1+1 ;
-                index3 = index1+2 ;
-                if (Kvec[index1]==Kvec[index2])
-                    deleteat!(Kvec, index1);
-                    index1-=1;
-                elseif (index3 <= length(Kvec) && Kvec[index1]==Kvec[index3] ) ##reduce X_{index1,k} X_{index2,l} X{index1,k} 
-                    deleteat!(Kvec, index2);
-                    index1-=1;
+                index2 = index1 + 1
+                index3 = index1 + 2
+                if (Kvec[index1] == Kvec[index2])
+                    deleteat!(Kvec, index1)
+                    index1 -= 1
+                elseif (index3 <= length(Kvec) && Kvec[index1] == Kvec[index3]) ##reduce X_{index1,k} X_{index2,l} X{index1,k} 
+                    deleteat!(Kvec, index2)
+                    index1 -= 1
                 end
-                index1+=1
+                index1 += 1
             end
-            Kvec= make_partition(Kvec)
-            WordDict[Kvec] =  P
+            Kvec = make_partition(Kvec)
+            WordDict[Kvec] = P
         end
-        for (Kvec, P) in WordDict 
-            push!(NewPartitions,P)
-        end    
-    else 
-        NewPartitions=AllPartitions
+        for (Kvec, P) in WordDict
+            push!(NewPartitions, P)
+        end
+    else
+        NewPartitions = AllPartitions
     end
 
-    LambdaToBlocksDict = Dict();
+    LambdaToBlocksDict = Dict()
     for lambda in Lambdas
         #maxreprelementsize=0;
         Ystart = YoungTableau(lambda)
         GoodTableauxPartitions = []
-        blockSize = 0;
+        blockSize = 0
 
         for setpart in NewPartitions
-            r=size(setpart,1) -1;  #first partition will correspond to first symbol which is fixed
-            candidates = AllCandidateVectors(k,r);
+            r = size(setpart, 1) - 1  #first partition will correspond to first symbol which is fixed
+            candidates = AllCandidateVectors(k, r)
             for candidate in candidates
-                fill!(Ystart,candidate)
+                fill!(Ystart, candidate)
                 if (IsSemiStandard(Ystart))
                     #push a deepcopy so that we push the correct filling and do not change it afterwards.
-                    GoodTableauxPartitions = push!(GoodTableauxPartitions,(deepcopy(Ystart),setpart))
-                    blockSize+=1;
+                    GoodTableauxPartitions = push!(GoodTableauxPartitions, (deepcopy(Ystart), setpart))
+                    blockSize += 1
                 end
             end
         end
-        blockSize = size(GoodTableauxPartitions,1)
+        blockSize = size(GoodTableauxPartitions, 1)
 
-        if blockSize >0
-            blockSizes=push!(blockSizes,blockSize);
+        if blockSize > 0
+            blockSizes = push!(blockSizes, blockSize)
             LambdaToBlocksDict[lambda] = GoodTableauxPartitions
         end
-
     end
     println("blockSizes: $blockSizes")
     return LambdaToBlocksDict
 end
 
-
 #generate representative set for k bases and level t
-function RepresentativeSkElement(indexobject, t, useColumnStabilizer = true)
-    GoodTableauxPartitions=indexobject 
-    blockSize = size(GoodTableauxPartitions,1)
+function RepresentativeSkElement(indexobject, t, useColumnStabilizer=true)
+    GoodTableauxPartitions = indexobject
+    blockSize = size(GoodTableauxPartitions, 1)
 
-    ReprArrayLambda=[];
-    for rowindex = 1:blockSize
-        sigmawithP1 = GoodTableauxPartitions[rowindex];
-        P1=sigmawithP1[2];
-        r=size(P1,1);
-        WordsWithSigns=[]
+    ReprArrayLambda = []
+    for rowindex in 1:blockSize
+        sigmawithP1 = GoodTableauxPartitions[rowindex]
+        P1 = sigmawithP1[2]
+        r = size(P1, 1)
+        WordsWithSigns = []
 
         RowTableaux = AllRowEquivalentTableaux(sigmawithP1[1])
         for rowtab in RowTableaux
-            ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab,1)]
+            ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab, 1)]
             for coltab in ColTableaux
-                FillVector = coltab[1].fill;
+                FillVector = coltab[1].fill
                 #we combine the fillvector and the partition into a word of length t;
-                Word = zeros(Int,t);
-                for symbol = 2:r+1
-                    position = findall(x -> x.==symbol, FillVector)[1]
-                    Set = P1[symbol-1];
-                    Word[Set].=position;
+                Word = zeros(Int, t)
+                for symbol in 2:r+1
+                    position = findall(x -> x .== symbol, FillVector)[1]
+                    Set = P1[symbol-1]
+                    Word[Set] .= position
                 end
-                Sign = coltab[2];
-                WordsWithSigns=push!(WordsWithSigns, (Word, Sign))
+                Sign = coltab[2]
+                WordsWithSigns = push!(WordsWithSigns, (Word, Sign))
             end
         end
 
-        ReprArrayLambda = push!(ReprArrayLambda,WordsWithSigns)
+        ReprArrayLambda = push!(ReprArrayLambda, WordsWithSigns)
     end
     return ReprArrayLambda
 end
 
-
 #generate representative set for k bases and level t+1/2
 function RepresentativeSkElementPlusHalf(indexobject, t, useColumnStabilizer=true)
-    GoodTableauxPartitions=indexobject 
-    blockSize = size(GoodTableauxPartitions,1)
-    ReprArrayLambda=[];
-    for rowindex = 1:blockSize
-        sigmawithP1 = GoodTableauxPartitions[rowindex];
+    GoodTableauxPartitions = indexobject
+    blockSize = size(GoodTableauxPartitions, 1)
+    ReprArrayLambda = []
+    for rowindex in 1:blockSize
+        sigmawithP1 = GoodTableauxPartitions[rowindex]
 
-        P1=sigmawithP1[2];
-        r=size(P1,1)-1;  #minus one because the first partition is fixed
+        P1 = sigmawithP1[2]
+        r = size(P1, 1) - 1  #minus one because the first partition is fixed
 
-        WordsWithSigns=[]
+        WordsWithSigns = []
 
         RowTableaux = AllRowEquivalentTableaux(sigmawithP1[1])
         for rowtab in RowTableaux
-            ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab,1)]
+            ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab, 1)]
             for coltab in ColTableaux
-                FillVector = coltab[1].fill;
+                FillVector = coltab[1].fill
                 #we combine the fillvector and the partition into a word of length t;
-                Word = zeros(Int,t+1);
+                Word = zeros(Int, t + 1)
                 FirstSet = P1[1]
-                Word[FirstSet].=1;
-                for symbol = 2:r+1
-                    position = findall(x -> x.==symbol, FillVector)[1]
-                    Set = P1[symbol];
-                    Word[Set].=position+1;
+                Word[FirstSet] .= 1
+                for symbol in 2:r+1
+                    position = findall(x -> x .== symbol, FillVector)[1]
+                    Set = P1[symbol]
+                    Word[Set] .= position + 1
                 end
-                Sign = coltab[2];
+                Sign = coltab[2]
                 popfirst!(Word)  #this is optional. We remove the first element from the word, so that we obtain a word of length t instead of a word of length t+1 starting with 1.
-                WordsWithSigns=push!(WordsWithSigns, (Word, Sign))
+                WordsWithSigns = push!(WordsWithSigns, (Word, Sign))
             end
         end
 
-        ReprArrayLambda = push!(ReprArrayLambda,WordsWithSigns)
+        ReprArrayLambda = push!(ReprArrayLambda, WordsWithSigns)
         #WORDSWITHSIGNS IS NOW THE (sigmawithP1)-th ELEMENT OF THE REPRESENTATIVE SET
     end
 
@@ -389,249 +383,248 @@ function ReduceInnerProduct(ReprRow, ReprCol, option=0)
     #if option==1, we do the t+1/2- version. The corresponding representative set elements must be given as input arguments!
     #If option==0, we do the normal t-th level version. The corresponding representative set elements must be given as input arguments!
 
-                    #compute the inner product, this is costly!
-                    RowColDict = Dict()
-                    Entry=[];
-                    if (option==1)
-                        for wordssign1 in ReprRow
-                            firstpartword = reverse(wordssign1[1])
-                            for wordssign2 in ReprCol
-                                tempmonoom = make_partition([firstpartword;1;wordssign2[1]])
+    #compute the inner product, this is costly!
+    RowColDict = Dict()
+    Entry = []
+    if (option == 1)
+        for wordssign1 in ReprRow
+            firstpartword = reverse(wordssign1[1])
+            for wordssign2 in ReprCol
+                tempmonoom = make_partition([firstpartword; 1; wordssign2[1]])
 
-                                if !haskey(RowColDict,tempmonoom)
-                                    RowColDict[tempmonoom] = wordssign1[2]
-                                else
-                                    RowColDict[tempmonoom] += wordssign1[2]
-                                end
-                            end
-                        end
-                    else
-                        for wordssign1 in ReprRow
-                            firstpartword = reverse(wordssign1[1])
-                            for wordssign2 in ReprCol
-                                tempmonoom = make_partition([firstpartword;wordssign2[1]])
+                if !haskey(RowColDict, tempmonoom)
+                    RowColDict[tempmonoom] = wordssign1[2]
+                else
+                    RowColDict[tempmonoom] += wordssign1[2]
+                end
+            end
+        end
+    else
+        for wordssign1 in ReprRow
+            firstpartword = reverse(wordssign1[1])
+            for wordssign2 in ReprCol
+                tempmonoom = make_partition([firstpartword; wordssign2[1]])
 
-                                if !haskey(RowColDict,tempmonoom)
-                                    RowColDict[tempmonoom] = wordssign1[2]
-                                else
-                                    RowColDict[tempmonoom] += wordssign1[2]
-                                end
-                            end
-                        end
-                    end
-                    for (monoom, value) in RowColDict
-                        push!(Entry,(monoom,value))
-                    end
-	    return RowColDict;
+                if !haskey(RowColDict, tempmonoom)
+                    RowColDict[tempmonoom] = wordssign1[2]
+                else
+                    RowColDict[tempmonoom] += wordssign1[2]
+                end
+            end
+        end
+    end
+    for (monoom, value) in RowColDict
+        push!(Entry, (monoom, value))
+    end
+    return RowColDict
 end
-
 
 ## FUNCTIONS FOR Sd wr Sk-ACTION (SEE SECTION 6)
 
 #flatten function
 function flatten(arr)
-	rst = Any[]
-	grep(v) = 	for x in v
-				if isa(x, Tuple)
-				grep(x)
-				else push!(rst, x) end
-				end
-	grep(arr)
-	return rst
+    rst = Any[]
+    grep(v) =
+        for x in v
+            if isa(x, Tuple)
+                grep(x)
+            else
+                push!(rst, x)
+            end
+        end
+    grep(arr)
+    return rst
 end
 
 # input: two arrays
 # returns a list of tuples of products (x,y) with x in the first and y in the second array.
 # if you apply it iteratively, it returns tuples of tuples like (x,(y,(w,z))). The function flatten from above transforms this into the array [x,y,w,z].
 function productQ(Qfirst, Qj)
-    outputQ=[];
+    outputQ = []
     if (isempty(Qfirst))
-        return Qj;
+        return Qj
     end
-    outputQ= collect( Base.product( Qfirst,Qj))
-    return outputQ;
+    outputQ = collect(Base.product(Qfirst, Qj))
+    return outputQ
 end
 
-
-
 #generate compositions of k in exactly n parts.
-compositions(n, k)  = map(A -> [sum(A .== i) for i in 1:n], with_replacement_combinations(1:n, k))
+compositions(n, k) = map(A -> [sum(A .== i) for i in 1:n], with_replacement_combinations(1:n, k))
 
 #consider the partition mur=(d-r,1,....,1).
 #create a map from lambda vdash d
 #to all semistandard young tableaux of shape lambda with filling mu_r.
-function CreateSemiStandardTableauxsizedmur(d,r)
-    Shapes =  ShapeAtMost(d,r+1)
-    MapLambdaDToSSYT= Dict();
-    candidates = AllCandidateVectors(d,r);
+function CreateSemiStandardTableauxsizedmur(d, r)
+    Shapes = ShapeAtMost(d, r + 1)
+    MapLambdaDToSSYT = Dict()
+    candidates = AllCandidateVectors(d, r)
     for lambda in Shapes
-        GoodTableauxPartitions =[]
+        GoodTableauxPartitions = []
         Ystart = YoungTableau(lambda)
         for candidate in candidates
-            fill!(Ystart,candidate)
+            fill!(Ystart, candidate)
             if (IsSemiStandard(Ystart))
                 #push a deepcopy so that we push the correct filling and do not change it afterwards.
-                GoodTableauxPartitions = push!(GoodTableauxPartitions,deepcopy(Ystart))
+                GoodTableauxPartitions = push!(GoodTableauxPartitions, deepcopy(Ystart))
             end
         end
-        MapLambdaDToSSYT[lambda] =  GoodTableauxPartitions
+        MapLambdaDToSSYT[lambda] = GoodTableauxPartitions
     end
     return MapLambdaDToSSYT
 end
 
 #consider the partition mur=(d-r,1,....,1).
 #return an array of all semistandard young tableaux of shape lambda with filling mu_r.
-function CreateSemiStandardTableauxsizedmurForShape(d,r,lambda)
-    candidates = AllCandidateVectors(d,r);
-        GoodTableauxPartitions =[]
-        Ystart = YoungTableau(lambda)
-        for candidate in candidates
-            fill!(Ystart,candidate)
-            if (IsSemiStandard(Ystart))
-                #push a deepcopy so that we push the correct filling and do not change it afterwards.
-                GoodTableauxPartitions = push!(GoodTableauxPartitions,deepcopy(Ystart))
-            end
+function CreateSemiStandardTableauxsizedmurForShape(d, r, lambda)
+    candidates = AllCandidateVectors(d, r)
+    GoodTableauxPartitions = []
+    Ystart = YoungTableau(lambda)
+    for candidate in candidates
+        fill!(Ystart, candidate)
+        if (IsSemiStandard(Ystart))
+            #push a deepcopy so that we push the correct filling and do not change it afterwards.
+            GoodTableauxPartitions = push!(GoodTableauxPartitions, deepcopy(Ystart))
         end
+    end
     return GoodTableauxPartitions
 end
 
 #creates all multipartitions underline{Lambda} of the given composition
 #each tableau has at most r+1 rows, and the first tableau has at least k-r boxes in the first row
-function TableauxTuples(composition,k, r)
-    TableauxTuples =[]
+function TableauxTuples(composition, k, r)
+    TableauxTuples = []
     TTuplesFinal = []
-   for ki in composition
-      if ki>0
-       Shapes =  ShapeAtMost(ki,r+1)
-      else
-       Shapes=[[]]
-      end
-      TableauxTuples = productQ(TableauxTuples,Shapes)
-   end
-   for TabProd in TableauxTuples
-        TabProdDef=flatten(TabProd)
-        #only push shapes with at least k-r in the first row of the first tableau (or empty first tableau if k0=0)
-        if(size(TabProdDef[1],1)==0 || TabProdDef[1][1]>=k-r)
-            push!(TTuplesFinal,TabProdDef)
+    for ki in composition
+        if ki > 0
+            Shapes = ShapeAtMost(ki, r + 1)
+        else
+            Shapes = [[]]
         end
-   end
+        TableauxTuples = productQ(TableauxTuples, Shapes)
+    end
+    for TabProd in TableauxTuples
+        TabProdDef = flatten(TabProd)
+        #only push shapes with at least k-r in the first row of the first tableau (or empty first tableau if k0=0)
+        if (size(TabProdDef[1], 1) == 0 || TabProdDef[1][1] >= k - r)
+            push!(TTuplesFinal, TabProdDef)
+        end
+    end
 
-   return TTuplesFinal
+    return TTuplesFinal
 end
 
 #generate per block (indexed by underline{Lambda}) the possible rowindices given by (P,Q,tau,sigma)
 #option=1 corresponds to only the relevant (giving rise to nonzero rows) partitions assuming L=0 on the ideal Imub
-function GeneratePartitionsTableauxFull(d,k, t,option=1)
-
-    if option==1
-        PWithQList = CreateRelevantPQiPartitionsV2(d,k,t)
+function GeneratePartitionsTableauxFull(d, k, t, option=1)
+    if option == 1
+        PWithQList = CreateRelevantPQiPartitionsV2(d, k, t)
     else
-        PWithQList = CreatePQiPartitions(d,k,t)
+        PWithQList = CreatePQiPartitions(d, k, t)
     end
 
-    LambdasForD = ShapeAtMost(d,t+1)
-    MapLambdaDToIndex = Dict();
-    MapIndexToLambdaD = Dict();
+    LambdasForD = ShapeAtMost(d, t + 1)
+    MapLambdaDToIndex = Dict()
+    MapIndexToLambdaD = Dict()
 
-
-    MapFinalBlockDiagLambda = Dict();
+    MapFinalBlockDiagLambda = Dict()
 
     for PQ in PWithQList
-        P=PQ[1]; Q=PQ[2];
-        r=size(P,1);
-        biggestQiSize = maximum([size(Qi,1) for Qi in Q ])
+        P = PQ[1]
+        Q = PQ[2]
+        r = size(P, 1)
+        biggestQiSize = maximum([size(Qi, 1) for Qi in Q])
 
-        LambdasForDr = ShapeAtMost(d,biggestQiSize+1)
-        MapLambdaDToIndex = Dict();
-        MapIndexToLambdaD = Dict();
-        index=0;
+        LambdasForDr = ShapeAtMost(d, biggestQiSize + 1)
+        MapLambdaDToIndex = Dict()
+        MapIndexToLambdaD = Dict()
+        index = 0
         for lambdaD in LambdasForDr
-            index+=1;
-            MapLambdaDToIndex[lambdaD]=index;
-            MapIndexToLambdaD[index]=lambdaD
+            index += 1
+            MapLambdaDToIndex[lambdaD] = index
+            MapIndexToLambdaD[index] = lambdaD
         end
-        maximumLambdaDIndex = size(LambdasForDr,1);
+        maximumLambdaDIndex = size(LambdasForDr, 1)
 
         #generate compositions of k in at most maximumLambdaDIndex parts.
-        CompositionsToConsider = compositions(maximumLambdaDIndex,k)
+        CompositionsToConsider = compositions(maximumLambdaDIndex, k)
         for comp in CompositionsToConsider
             #consider only relevant compositions
-            if comp[1] >= k-r
-                TableauxT = TableauxTuples(comp,k, r);
+            if comp[1] >= k - r
+                TableauxT = TableauxTuples(comp, k, r)
                 # now we have all relevant Lambda
                 for tableauxTuple in TableauxT
                     #make sure the tableauxtuple is of the correct length
-                    for j=size(tableauxTuple,1)+1:size(LambdasForD,1)
-                        push!(tableauxTuple,[])
+                    for j in size(tableauxTuple, 1)+1:size(LambdasForD, 1)
+                        push!(tableauxTuple, [])
                     end
-                     # generate possible fillings.
-                    fillingkvectors = AllCandidateVectors(k,r)
+                    # generate possible fillings.
+                    fillingkvectors = AllCandidateVectors(k, r)
 
                     for fillingkvector in fillingkvectors
-                        startindex =1;
-                        kantoevoegen=true;
-                        FilledTableauxTuple=[];
-                        for tupleindex = 1:size(comp,1)
-                            ki=comp[tupleindex]
-                            fillkivector = fillingkvector[startindex : startindex+ki - 1]
-                            Ytab = ki>0 ? YoungTableau(convert(Array{Int64,1},tableauxTuple[tupleindex])) : []
-                            if ki>0
-                                fill!(Ytab,fillkivector)
-                                if (ki >0 &&!IsSemiStandard(Ytab))
-                                    kantoevoegen=false;
+                        startindex = 1
+                        kantoevoegen = true
+                        FilledTableauxTuple = []
+                        for tupleindex in 1:size(comp, 1)
+                            ki = comp[tupleindex]
+                            fillkivector = fillingkvector[startindex:startindex+ki-1]
+                            Ytab = ki > 0 ? YoungTableau(convert(Array{Int64, 1}, tableauxTuple[tupleindex])) : []
+                            if ki > 0
+                                fill!(Ytab, fillkivector)
+                                if (ki > 0 && !IsSemiStandard(Ytab))
+                                    kantoevoegen = false
                                 end
                             end
-                            startindex+=ki
-                            push!(FilledTableauxTuple,Ytab)
+                            startindex += ki
+                            push!(FilledTableauxTuple, Ytab)
                         end
                         if kantoevoegen
                             #for each ri = 1:r, create collection (array) with possibilities for 1:r ssyts
                             # in the end, each entry of allowedSSYTSD must become an array of size r, where entry i is a SSYT of shape nu_j, where j is the unique j such that lambda_j contains
                             # the entry i+1.
-                            allowedSSYTSD=[]
-                            newsize=1;
-                            productofmorethanonetableau=false
-                            for ri=1:r
-                                fillindex = findall(x -> x==ri+1,fillingkvector)[1]
+                            allowedSSYTSD = []
+                            newsize = 1
+                            productofmorethanonetableau = false
+                            for ri in 1:r
+                                fillindex = findall(x -> x == ri + 1, fillingkvector)[1]
                                 RelevantQi = Q[ri]
-                                Qisize=size(RelevantQi,1)
+                                Qisize = size(RelevantQi, 1)
 
                                 #determine composition index
-                                compindex=1;
-                                compsum=comp[1]
+                                compindex = 1
+                                compsum = comp[1]
                                 while compsum < fillindex
-                                    compindex+=1;
-                                    compsum+=comp[compindex]
+                                    compindex += 1
+                                    compsum += comp[compindex]
                                 end
                                 #now we know the i for which lambda_i vdash k_i contains the sign ri
                                 #recover shape:
                                 shape = MapIndexToLambdaD[compindex]
-                                newSSYTS= CreateSemiStandardTableauxsizedmurForShape(d,Qisize,shape)  #NEW: QIsize
-                                newsize = isempty(newSSYTS) ? 0 : newsize*length(newSSYTS)
-                                if newsize>=1
+                                newSSYTS = CreateSemiStandardTableauxsizedmurForShape(d, Qisize, shape)  #NEW: QIsize
+                                newsize = isempty(newSSYTS) ? 0 : newsize * length(newSSYTS)
+                                if newsize >= 1
                                     if (!isempty(allowedSSYTSD) && !isempty(newSSYTS))
-                                        productofmorethanonetableau=true
+                                        productofmorethanonetableau = true
                                     end
                                     allowedSSYTSD = productQ(allowedSSYTSD, newSSYTS)
                                 end
                             end
-                            Test=Any[];
+                            Test = Any[]
                             if productofmorethanonetableau
-                                for indextemp = 1: newsize
-                                    push!(Test,flatten(allowedSSYTSD[indextemp]))
+                                for indextemp in 1:newsize
+                                    push!(Test, flatten(allowedSSYTSD[indextemp]))
                                 end
                             else
-                            #tuple contains only one tableau, AllowedSSYTSD is a list [tab1, tab2, tab3] but we want it to be [[tab1],[tab2],[tab3]]
-                                for indextemp = 1: newsize
-                                    push!(Test,[allowedSSYTSD[indextemp]])
+                                #tuple contains only one tableau, AllowedSSYTSD is a list [tab1, tab2, tab3] but we want it to be [[tab1],[tab2],[tab3]]
+                                for indextemp in 1:newsize
+                                    push!(Test, [allowedSSYTSD[indextemp]])
                                 end
                             end
-                            allowedSSYTSD=Test
-                            if (!haskey(MapFinalBlockDiagLambda,tableauxTuple))
-                                MapFinalBlockDiagLambda[tableauxTuple]=[]
+                            allowedSSYTSD = Test
+                            if (!haskey(MapFinalBlockDiagLambda, tableauxTuple))
+                                MapFinalBlockDiagLambda[tableauxTuple] = []
                             end
-                            for test=1:newsize
-                                push!(MapFinalBlockDiagLambda[tableauxTuple], [P,Q,FilledTableauxTuple,allowedSSYTSD[test]])
+                            for test in 1:newsize
+                                push!(MapFinalBlockDiagLambda[tableauxTuple], [P, Q, FilledTableauxTuple, allowedSSYTSD[test]])
                             end
                         end
                     end
@@ -640,162 +633,165 @@ function GeneratePartitionsTableauxFull(d,k, t,option=1)
         end
     end
 
-    totaal=0;
-    totaalsom = 0;
-    maxblokgrootte=0;
+    totaal = 0
+    totaalsom = 0
+    maxblokgrootte = 0
     for (key, value) in MapFinalBlockDiagLambda
-        blokgrootte=length(value)
-        if (blokgrootte>0 )
+        blokgrootte = length(value)
+        if (blokgrootte > 0)
             println(key, " of size ", blokgrootte)
-            totaal=totaal+(blokgrootte*blokgrootte);
-            totaalsom=totaalsom+(blokgrootte);
+            totaal = totaal + (blokgrootte * blokgrootte)
+            totaalsom = totaalsom + (blokgrootte)
             if blokgrootte > maxblokgrootte
-                maxblokgrootte=blokgrootte
+                maxblokgrootte = blokgrootte
             end
         else
-            delete!(MapFinalBlockDiagLambda,key)
+            delete!(MapFinalBlockDiagLambda, key)
         end
     end
-    println("sum of squares of block sizes: ",totaal)
-    println("sum of block sizes: ",totaalsom)
-    println("max block size: ",maxblokgrootte)
+    println("sum of squares of block sizes: ", totaal)
+    println("sum of block sizes: ", totaalsom)
+    println("max block size: ", maxblokgrootte)
     println("sum,max: ")
-    println(totaalsom," & ",maxblokgrootte)
+    println(totaalsom, " & ", maxblokgrootte)
     return MapFinalBlockDiagLambda
 end
 
 #generate per block, indexed by a pair (underline{Lambda} (for Sd wr Sk-1), lambda (for Sd-1)), the possible rowindices given by (P,Q,tau,sigma)
 #option=1 corresponds to only the relevant (giving rise to nonzero rows) partitions assuming L=0 on the ideal Imub
 function GeneratePartitionsTableauxFullPlusHalf(d, k, t, option=1)
-    if option==1
-        PWithQList = CreateRelevantPQiPartitionsV2(d,k,t+1)
+    if option == 1
+        PWithQList = CreateRelevantPQiPartitionsV2(d, k, t + 1)
     else
-        PWithQList = CreatePQiPartitions(d,k,t+1)
+        PWithQList = CreatePQiPartitions(d, k, t + 1)
     end
 
-    LambdasForD = ShapeAtMost(d,t+1)
-    MapLambdaDToIndex = Dict();
-    MapIndexToLambdaD = Dict();
+    LambdasForD = ShapeAtMost(d, t + 1)
+    MapLambdaDToIndex = Dict()
+    MapIndexToLambdaD = Dict()
 
-
-    MapFinalBlockDiagLambda = Dict();
+    MapFinalBlockDiagLambda = Dict()
 
     for PQ in PWithQList
-        P=PQ[1]; Q=PQ[2];
-        r=size(P,1)-1;  #NOTE: first partition fixed (plus half), r one smaller.
-        biggestQiSize = maximum([size(Qi,1) for Qi in  Q])  #determine the size of the largest Qi
-        biggestQiSize >t ? biggestQiSize=t : biggestQiSize=biggestQiSize ;
+        P = PQ[1]
+        Q = PQ[2]
+        r = size(P, 1) - 1  #NOTE: first partition fixed (plus half), r one smaller.
+        biggestQiSize = maximum([size(Qi, 1) for Qi in Q])  #determine the size of the largest Qi
+        biggestQiSize > t ? biggestQiSize = t : biggestQiSize = biggestQiSize
 
         FirstQi = Q[1]
-        Qisize=size(FirstQi,1)
-        LambdasForFirstQi = ShapeAtMost(d-1,Qisize)
+        Qisize = size(FirstQi, 1)
+        LambdasForFirstQi = ShapeAtMost(d - 1, Qisize)
 
-        LambdasForDr = ShapeAtMost(d,biggestQiSize+1)
-        MapLambdaDToIndex = Dict();
-        MapIndexToLambdaD = Dict();
-        index=0;
+        LambdasForDr = ShapeAtMost(d, biggestQiSize + 1)
+        MapLambdaDToIndex = Dict()
+        MapIndexToLambdaD = Dict()
+        index = 0
         for lambdaD in LambdasForDr
-            index+=1;
-            MapLambdaDToIndex[lambdaD]=index;
-            MapIndexToLambdaD[index]=lambdaD
+            index += 1
+            MapLambdaDToIndex[lambdaD] = index
+            MapIndexToLambdaD[index] = lambdaD
         end
-        maximumLambdaDIndex = size(LambdasForDr,1);
+        maximumLambdaDIndex = size(LambdasForDr, 1)
 
         #generate compositions of k in at most maximumLambdaDIndex parts.
-        CompositionsToConsider = compositions(maximumLambdaDIndex,k-1)
+        CompositionsToConsider = compositions(maximumLambdaDIndex, k - 1)
         for comp in CompositionsToConsider
             #consider only relevant compositions
-            if comp[1] >= k-1-r
-                TableauxT = TableauxTuples(comp,k-1, r);
+            if comp[1] >= k - 1 - r
+                TableauxT = TableauxTuples(comp, k - 1, r)
                 # now we have all relevant underline{Lambda}
                 for tableauxTuple in TableauxT
                     #make sure the tableauxtuple is of the correct length
-                    for j=size(tableauxTuple,1)+1:size(LambdasForD,1)
-                        push!(tableauxTuple,[])
+                    for j in size(tableauxTuple, 1)+1:size(LambdasForD, 1)
+                        push!(tableauxTuple, [])
                     end
 
                     for shapeFirstQi in LambdasForFirstQi
 
                         # generate possible fillings.
-                        fillingkvectors = AllCandidateVectors(k-1,r)
+                        fillingkvectors = AllCandidateVectors(k - 1, r)
 
                         for fillingkvector in fillingkvectors
-                            startindex =1;
-                            kantoevoegen=true;
-                            FilledTableauxTuple=[];
-                            for tupleindex = 1:size(comp,1)
-                                ki=comp[tupleindex]
-                                fillkivector = fillingkvector[startindex : startindex+ki - 1]
-                                Ytab = ki>0 ? YoungTableau(convert(Array{Int64,1},tableauxTuple[tupleindex])) : []
-                                if ki>0
-                                    fill!(Ytab,fillkivector)
+                            startindex = 1
+                            kantoevoegen = true
+                            FilledTableauxTuple = []
+                            for tupleindex in 1:size(comp, 1)
+                                ki = comp[tupleindex]
+                                fillkivector = fillingkvector[startindex:startindex+ki-1]
+                                Ytab = ki > 0 ? YoungTableau(convert(Array{Int64, 1}, tableauxTuple[tupleindex])) : []
+                                if ki > 0
+                                    fill!(Ytab, fillkivector)
                                     if !IsSemiStandard(Ytab)
-                                        kantoevoegen=false;
+                                        kantoevoegen = false
                                         break # Once we have determined that the candidate filling of one of the lambda^a is not correct (ss), we can stop checking the others
                                     end
                                 end
-                                startindex+=ki
-                                push!(FilledTableauxTuple,Ytab)
+                                startindex += ki
+                                push!(FilledTableauxTuple, Ytab)
                             end
                             if kantoevoegen
                                 #for each ri = 1:r, create collection (array) with possibilities for 1:r ssyts
                                 # in the end, each entry of allowedSSYTSD must become an array of size r, where entry i is a SSYT of shape nu_j, where j is the unique j such that lambda_j contains
                                 # the entry i+1.
-                                allowedSSYTSD=[]
-                                newsize=1;
-                                productofmorethanonetableau=false
+                                allowedSSYTSD = []
+                                newsize = 1
+                                productofmorethanonetableau = false
                                 FirstQi = Q[1]
-                                Qisize=size(FirstQi,1)
-                                newSSYTS= CreateSemiStandardTableauxsizedmurForShape(d-1,Qisize-1,shapeFirstQi)
-                                newsize = isempty(newSSYTS) ? 0 : newsize*length(newSSYTS)
-                                if newsize>=1
+                                Qisize = size(FirstQi, 1)
+                                newSSYTS = CreateSemiStandardTableauxsizedmurForShape(d - 1, Qisize - 1, shapeFirstQi)
+                                newsize = isempty(newSSYTS) ? 0 : newsize * length(newSSYTS)
+                                if newsize >= 1
                                     if (!isempty(allowedSSYTSD) && !isempty(newSSYTS))
-                                        productofmorethanonetableau=true
+                                        productofmorethanonetableau = true
                                     end
                                     allowedSSYTSD = productQ(allowedSSYTSD, newSSYTS)
                                 end
-                                for ri=1:r
-                                    fillindex = findall(x -> x==ri+1,fillingkvector)[1]
+                                for ri in 1:r
+                                    fillindex = findall(x -> x == ri + 1, fillingkvector)[1]
                                     RelevantQi = Q[ri+1]
-                                    Qisize=size(RelevantQi,1)
+                                    Qisize = size(RelevantQi, 1)
 
                                     #determine composition index
-                                    compindex=1;
-                                    compsum=comp[1]
+                                    compindex = 1
+                                    compsum = comp[1]
                                     while compsum < fillindex
-                                        compindex+=1;
-                                        compsum+=comp[compindex]
+                                        compindex += 1
+                                        compsum += comp[compindex]
                                     end
                                     #now we know the i for which lambda_i vdash k_i contains the symbol ri
                                     #recover shape:
                                     shape = MapIndexToLambdaD[compindex]
-                                    newSSYTS= CreateSemiStandardTableauxsizedmurForShape(d,Qisize,shape)
-                                    newsize = isempty(newSSYTS) ? 0 : newsize*length(newSSYTS)
-                                    if newsize>=1
+                                    newSSYTS = CreateSemiStandardTableauxsizedmurForShape(d, Qisize, shape)
+                                    newsize = isempty(newSSYTS) ? 0 : newsize * length(newSSYTS)
+                                    if newsize >= 1
                                         if (!isempty(allowedSSYTSD) && !isempty(newSSYTS))
-                                            productofmorethanonetableau=true
+                                            productofmorethanonetableau = true
                                         end
                                         allowedSSYTSD = productQ(allowedSSYTSD, newSSYTS)
                                     end
                                 end
 
-                                Test=Any[];
+                                Test = Any[]
                                 if productofmorethanonetableau
-                                    for indextemp = 1: newsize
-                                        push!(Test,flatten(allowedSSYTSD[indextemp]))
+                                    for indextemp in 1:newsize
+                                        push!(Test, flatten(allowedSSYTSD[indextemp]))
                                     end
                                 else
-                                #tuple contains only one tableau, AllowedSSYTSD is a list [tab1, tab2, tab3] but we want it to be [[tab1],[tab2],[tab3]]
-                                    for indextemp = 1: newsize
-                                        push!(Test,[allowedSSYTSD[indextemp]])
+                                    #tuple contains only one tableau, AllowedSSYTSD is a list [tab1, tab2, tab3] but we want it to be [[tab1],[tab2],[tab3]]
+                                    for indextemp in 1:newsize
+                                        push!(Test, [allowedSSYTSD[indextemp]])
                                     end
                                 end
-                                allowedSSYTSD=Test
-                                if (!haskey(MapFinalBlockDiagLambda,(tableauxTuple,shapeFirstQi)))
-                                    MapFinalBlockDiagLambda[(tableauxTuple,shapeFirstQi)]=[]
+                                allowedSSYTSD = Test
+                                if (!haskey(MapFinalBlockDiagLambda, (tableauxTuple, shapeFirstQi)))
+                                    MapFinalBlockDiagLambda[(tableauxTuple, shapeFirstQi)] = []
                                 end
-                                for test=1:newsize
-                                    push!(MapFinalBlockDiagLambda[(tableauxTuple,shapeFirstQi)], [P,Q,FilledTableauxTuple,allowedSSYTSD[test]])
+                                for test in 1:newsize
+                                    push!(
+                                        MapFinalBlockDiagLambda[(tableauxTuple, shapeFirstQi)],
+                                        [P, Q, FilledTableauxTuple, allowedSSYTSD[test]],
+                                    )
                                 end
                             end
                         end
@@ -805,41 +801,40 @@ function GeneratePartitionsTableauxFullPlusHalf(d, k, t, option=1)
         end
     end
 
-    totaal=0;
-    totaalsom = 0;
-    maxblokgrootte=0;
+    totaal = 0
+    totaalsom = 0
+    maxblokgrootte = 0
     for (key, value) in MapFinalBlockDiagLambda
-        blokgrootte=length(value)
-        if (blokgrootte>0 )
+        blokgrootte = length(value)
+        if (blokgrootte > 0)
             println(key, " of size ", blokgrootte)
 
-            totaal=totaal+(blokgrootte*blokgrootte);
-            totaalsom=totaalsom+blokgrootte;
+            totaal = totaal + (blokgrootte * blokgrootte)
+            totaalsom = totaalsom + blokgrootte
             if blokgrootte > maxblokgrootte
-                maxblokgrootte=blokgrootte
+                maxblokgrootte = blokgrootte
             end
         else
-            delete!(MapFinalBlockDiagLambda,key)
+            delete!(MapFinalBlockDiagLambda, key)
         end
     end
-    println("sum of squares of block sizes: ",totaal)
-    println("sum of block sizes: ",totaalsom)
-    println("max block size: ",maxblokgrootte)
+    println("sum of squares of block sizes: ", totaal)
+    println("sum of block sizes: ", totaalsom)
+    println("max block size: ", maxblokgrootte)
     println("sum,max: ")
-    println(totaalsom," & ",maxblokgrootte)
+    println(totaalsom, " & ", maxblokgrootte)
     return MapFinalBlockDiagLambda
 end
 
-
 #Takes as input two arrays with pairs (tableau,sign) and produces an array with all pairs (tableau1 cat tableau2, sign1*sign2)
 function TableauxVectorsProduct(ProductArray, NewTableauVectorWithSigns)
-    OutputWithSigns=[]
+    OutputWithSigns = []
     if (isempty(NewTableauVectorWithSigns) || isempty(ProductArray))
-        return isempty(ProductArray) ? NewTableauVectorWithSigns : ProductArray;
+        return isempty(ProductArray) ? NewTableauVectorWithSigns : ProductArray
     end
     for v1WithSign in ProductArray
         for v2WithSign in NewTableauVectorWithSigns
-            push!(OutputWithSigns, (vcat(v1WithSign[1], v2WithSign[1]) ,v1WithSign[2]*v2WithSign[2]))
+            push!(OutputWithSigns, (vcat(v1WithSign[1], v2WithSign[1]), v1WithSign[2] * v2WithSign[2]))
         end
     end
 
@@ -849,173 +844,172 @@ end
 #Takes as input a tuple (P,Q,tau,sigma)
 #Outputs (WordsKWithSigns, WordsDWithSigns, P, Q) where the tensor product of the first two defines the noncommutative polynomial (by taking the signed sum of the entries) corresponding to the representative element.
 # P and Q are returned for convenience.
-function RepresentativeFullElement(indexobject, useColumnStabilizer = true )
-
-    P=indexobject[1]
+function RepresentativeFullElement(indexobject, useColumnStabilizer=true)
+    P = indexobject[1]
     #determine t
-    t=0;
+    t = 0
     for Pi in P
-        t+=size(Pi,1)
+        t += size(Pi, 1)
     end
 
     #println("P: ", P)
-    Q=indexobject[2]
+    Q = indexobject[2]
     #println("Q: ", Q)
     FilledKTableauxTuple = indexobject[3]
     FilledDTableauxTuple = indexobject[4]
 
     ### Make k-representative object
-    ProductTableauVectorsWithSigns=[]
+    ProductTableauVectorsWithSigns = []
     for tauitableau in FilledKTableauxTuple
-        TableauVectorsWithSigns =[];
+        TableauVectorsWithSigns = []
         if (!isempty(tauitableau))
             RowTableaux = AllRowEquivalentTableaux(tauitableau)
             for rowtab in RowTableaux
-                ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab,1)]
+                ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab, 1)]
                 for coltab in ColTableaux
-                    FillVector = coltab[1].fill;
+                    FillVector = coltab[1].fill
                     #we combine the fillvector and the partition into a word of length t;
-                    Sign = coltab[2];
-                    TableauVectorsWithSigns=push!(TableauVectorsWithSigns, (FillVector, Sign))
+                    Sign = coltab[2]
+                    TableauVectorsWithSigns = push!(TableauVectorsWithSigns, (FillVector, Sign))
                 end
             end
             ProductTableauVectorsWithSigns = TableauxVectorsProduct(ProductTableauVectorsWithSigns, TableauVectorsWithSigns)
         end
     end
-    WordsKWithSigns =Tuple{Vector{Int8}, Int128}[]
+    WordsKWithSigns = Tuple{Vector{Int8}, Int128}[]
     for ProductVectorsWithSigns in ProductTableauVectorsWithSigns
-        FillVector= ProductVectorsWithSigns[1]
-        sign= ProductVectorsWithSigns[2]
-        Word=zeros(Int8,t)
-        for symbol = 1:size(P,1)
-            position = findall(x -> x.==(symbol+1), FillVector)[1]
-            Set = P[symbol];
-            Word[Set].=position;
+        FillVector = ProductVectorsWithSigns[1]
+        sign = ProductVectorsWithSigns[2]
+        Word = zeros(Int8, t)
+        for symbol in 1:size(P, 1)
+            position = findall(x -> x .== (symbol + 1), FillVector)[1]
+            Set = P[symbol]
+            Word[Set] .= position
         end
-        push!(WordsKWithSigns,(Word, sign))
+        push!(WordsKWithSigns, (Word, sign))
     end
 
     ############# MAKE D-OBJECT ###################
     #println("filledDtuple:", FilledDTableauxTuple)
-    WordsDWithSigns=Vector{Tuple{Vector{Int8}, Int128}}[]
-    qiindex=1;
+    WordsDWithSigns = Vector{Tuple{Vector{Int8}, Int128}}[]
+    qiindex = 1
     for sigmaitableau in FilledDTableauxTuple
-        Qi=Q[qiindex];
+        Qi = Q[qiindex]
         lengthword = length(P[qiindex])
-        qiindex+=1;
-        TableauVectorsWithSigns =Tuple{Vector{Int8}, Int128}[];
+        qiindex += 1
+        TableauVectorsWithSigns = Tuple{Vector{Int8}, Int128}[]
         RowTableaux = AllRowEquivalentTableaux(sigmaitableau)
         for rowtab in RowTableaux
-            ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab,1)]
+            ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab, 1)]
             for coltab in ColTableaux
-                FillVector = coltab[1].fill;
+                FillVector = coltab[1].fill
                 #we combine the fillvector and the partition into a word of length r_i;
-                ri = maximum(FillVector)-1;
-                Word = zeros(Int8,lengthword);
-                for symbol = 2:ri+1
-                    position = findall(x -> x.==symbol, FillVector)[1]
-                    Set = Qi[symbol-1];
-                    Word[Set].=position;
+                ri = maximum(FillVector) - 1
+                Word = zeros(Int8, lengthword)
+                for symbol in 2:ri+1
+                    position = findall(x -> x .== symbol, FillVector)[1]
+                    Set = Qi[symbol-1]
+                    Word[Set] .= position
                 end
-                Sign = coltab[2];
-                TableauVectorsWithSigns=push!(TableauVectorsWithSigns, (Word, Sign))
+                Sign = coltab[2]
+                TableauVectorsWithSigns = push!(TableauVectorsWithSigns, (Word, Sign))
             end
         end
-        push!(WordsDWithSigns,TableauVectorsWithSigns)
+        push!(WordsDWithSigns, TableauVectorsWithSigns)
     end
 
     ########### END OF D-OBJECT ###########################
-    Q=convert(Vector{Vector{Vector{Int8}}},Q)
-    P=convert(Vector{Vector{Int8}},P)
+    Q = convert(Vector{Vector{Vector{Int8}}}, Q)
+    P = convert(Vector{Vector{Int8}}, P)
     return (WordsKWithSigns, WordsDWithSigns, P, Q)
 end
 
-function RepresentativeFullElementPlusHalf(indexobject ,useColumnStabilizer=true )
-    P=indexobject[1]
+function RepresentativeFullElementPlusHalf(indexobject, useColumnStabilizer=true)
+    P = indexobject[1]
     #determine t
-    t=0;
+    t = 0
     for Pi in P
-        t+=size(Pi,1)
+        t += size(Pi, 1)
     end
-    t-=1
+    t -= 1
     #sum of size(Pi,1) is t+1, we are in situation PlusHalf
 
     #println("P: ", P)
-    Q=indexobject[2]
+    Q = indexobject[2]
     #println("Q: ", Q)
     FilledKTableauxTuple = indexobject[3]
     FilledDTableauxTuple = indexobject[4]
 
     ### Make k-representative object
-    ProductTableauVectorsWithSigns=[]
+    ProductTableauVectorsWithSigns = []
     for tauitableau in FilledKTableauxTuple
-        TableauVectorsWithSigns =[];
+        TableauVectorsWithSigns = []
         if (!isempty(tauitableau))
             RowTableaux = AllRowEquivalentTableaux(tauitableau)
             for rowtab in RowTableaux
-                ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab,1)]
+                ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab, 1)]
                 for coltab in ColTableaux
-                    FillVector = coltab[1].fill;
+                    FillVector = coltab[1].fill
                     #we combine the fillvector and the partition into a word of length t;
-                    Sign = coltab[2];
-                    TableauVectorsWithSigns=push!(TableauVectorsWithSigns, (FillVector, Sign))
+                    Sign = coltab[2]
+                    TableauVectorsWithSigns = push!(TableauVectorsWithSigns, (FillVector, Sign))
                 end
             end
             ProductTableauVectorsWithSigns = TableauxVectorsProduct(ProductTableauVectorsWithSigns, TableauVectorsWithSigns)
         end
     end
-    WordsKWithSigns =Tuple{Vector{Int8}, Int128}[]
+    WordsKWithSigns = Tuple{Vector{Int8}, Int128}[]
     for ProductVectorsWithSigns in ProductTableauVectorsWithSigns
-        FillVector= ProductVectorsWithSigns[1]
-        sign= ProductVectorsWithSigns[2]
-        Word=zeros(Int,t+1)
+        FillVector = ProductVectorsWithSigns[1]
+        sign = ProductVectorsWithSigns[2]
+        Word = zeros(Int, t + 1)
         FirstSet = P[1]
-        Word[FirstSet].=1;
-        for symbol = 2:size(P,1)
-            position = findall(x -> x.==symbol, FillVector)[1]
-            Set = P[symbol];
-            Word[Set].=position+1;  ##S_{k-1} acts on 2,....,k
+        Word[FirstSet] .= 1
+        for symbol in 2:size(P, 1)
+            position = findall(x -> x .== symbol, FillVector)[1]
+            Set = P[symbol]
+            Word[Set] .= position + 1  ##S_{k-1} acts on 2,....,k
         end
-        push!(WordsKWithSigns,(Word, sign))
+        push!(WordsKWithSigns, (Word, sign))
     end
 
     ############# MAKE D-OBJECT ###################
     #println("filledDtuple:", FilledDTableauxTuple)
-    qiindex=1;
-    WordsDWithSigns=Vector{Tuple{Vector{Int8}, Int128}}[]
+    qiindex = 1
+    WordsDWithSigns = Vector{Tuple{Vector{Int8}, Int128}}[]
     for sigmaitableau in FilledDTableauxTuple
-        Qi=Q[qiindex];
+        Qi = Q[qiindex]
         lengthword = length(P[qiindex])
-        TableauVectorsWithSigns =[];
+        TableauVectorsWithSigns = []
         RowTableaux = AllRowEquivalentTableaux(sigmaitableau)
 
         for rowtab in RowTableaux
-            ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab,1)]
+            ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab, 1)]
             for coltab in ColTableaux
-                Word = zeros(Int,lengthword);
+                Word = zeros(Int, lengthword)
                 if qiindex == 1
-                    Word[Qi[1]].=1;
+                    Word[Qi[1]] .= 1
                 end
-                FillVector = coltab[1].fill;
+                FillVector = coltab[1].fill
                 #we combine the fillvector and the partition into a word of length r_i;
-                ri = maximum(FillVector)-1;
-                for symbol = 2:ri+1
-                    position = findall(x -> x.==symbol, FillVector)[1]
-                    symboltranslation = qiindex==1 ? symbol : (symbol-1);
-                    Set = Qi[symboltranslation];
-                    position = qiindex==1 ? position+1 : position  #if qiindex=1 we have that S_{d-1} acts on 2,..,d. Otherwise S_d acts on [d].
-                    Word[Set].=position;
+                ri = maximum(FillVector) - 1
+                for symbol in 2:ri+1
+                    position = findall(x -> x .== symbol, FillVector)[1]
+                    symboltranslation = qiindex == 1 ? symbol : (symbol - 1)
+                    Set = Qi[symboltranslation]
+                    position = qiindex == 1 ? position + 1 : position  #if qiindex=1 we have that S_{d-1} acts on 2,..,d. Otherwise S_d acts on [d].
+                    Word[Set] .= position
                 end
-                Sign = coltab[2];
-                TableauVectorsWithSigns=push!(TableauVectorsWithSigns, (Word, Sign))
+                Sign = coltab[2]
+                TableauVectorsWithSigns = push!(TableauVectorsWithSigns, (Word, Sign))
             end
         end
-        push!(WordsDWithSigns,TableauVectorsWithSigns)
-        qiindex+=1;
+        push!(WordsDWithSigns, TableauVectorsWithSigns)
+        qiindex += 1
     end
     ########### END OF D-OBJECT ###########################
-    Q=convert(Vector{Vector{Vector{Int8}}},Q)
-    P=convert(Vector{Vector{Int8}},P)
+    Q = convert(Vector{Vector{Vector{Int8}}}, Q)
+    P = convert(Vector{Vector{Int8}}, P)
     return (WordsKWithSigns, WordsDWithSigns, P, Q)
 end
 
@@ -1026,188 +1020,193 @@ end
 function ReduceInnerProductBasic(ReprRow, ReprCol)
     #we do the normal t-th level version. The corresponding representative set elements must be given as input arguments!
 
-        #compute the inner product, this is costly!
-        RowColKDict = Dict()
-        RowColDDict = Dict()
-        EntryDict = Dict()
+    #compute the inner product, this is costly!
+    RowColKDict = Dict()
+    RowColDDict = Dict()
+    EntryDict = Dict()
 
-        ReprKRow=ReprRow[1]; ReprDRow=ReprRow[2];
-        ReprKCol=ReprCol[1]; ReprDCol=ReprCol[2];
+    ReprKRow = ReprRow[1]
+    ReprDRow = ReprRow[2]
+    ReprKCol = ReprCol[1]
+    ReprDCol = ReprCol[2]
 
-        ##reduce K inner product
-        for wordssign1 in ReprKRow
-            firstpartword = reverse(wordssign1[1])
-            for wordssign2 in ReprKCol
-                tempmonoom = make_partition([firstpartword;wordssign2[1]])
+    ##reduce K inner product
+    for wordssign1 in ReprKRow
+        firstpartword = reverse(wordssign1[1])
+        for wordssign2 in ReprKCol
+            tempmonoom = make_partition([firstpartword; wordssign2[1]])
 
-                if !haskey(RowColKDict,tempmonoom)
-                    RowColKDict[tempmonoom] = wordssign1[2]*wordssign2[2]
-                else
-                    RowColKDict[tempmonoom] += wordssign1[2]*wordssign2[2]
-                end
+            if !haskey(RowColKDict, tempmonoom)
+                RowColKDict[tempmonoom] = wordssign1[2] * wordssign2[2]
+            else
+                RowColKDict[tempmonoom] += wordssign1[2] * wordssign2[2]
             end
         end
+    end
 
-        ##reduce D inner product
-        for wordssign1 in ReprDRow
-            firstpartword = reverse(wordssign1[1])
-            for wordssign2 in ReprDCol
-                tempmonoom = make_partition([firstpartword;wordssign2[1]])
+    ##reduce D inner product
+    for wordssign1 in ReprDRow
+        firstpartword = reverse(wordssign1[1])
+        for wordssign2 in ReprDCol
+            tempmonoom = make_partition([firstpartword; wordssign2[1]])
 
-                if !haskey(RowColDDict,tempmonoom)
-                    RowColDDict[tempmonoom] = wordssign1[2]*wordssign2[2]
-                else
-                    RowColDDict[tempmonoom] += wordssign1[2]*wordssign2[2]
-                end
+            if !haskey(RowColDDict, tempmonoom)
+                RowColDDict[tempmonoom] = wordssign1[2] * wordssign2[2]
+            else
+                RowColDDict[tempmonoom] += wordssign1[2] * wordssign2[2]
             end
         end
+    end
 
-        ##Take products
-        for (tempmonoomK, valueK)  in RowColKDict
-            for (tempmonoomDim, valueDim)  in RowColDDict
-                    if !haskey(EntryDict,(tempmonoomDim, tempmonoomK))
-                        EntryDict[(tempmonoomDim, tempmonoomK)] = valueK*valueDim
-                    else
-                        EntryDict[(tempmonoomDim, tempmonoomK)] +=  valueK*valueDim
-                    end
+    ##Take products
+    for (tempmonoomK, valueK) in RowColKDict
+        for (tempmonoomDim, valueDim) in RowColDDict
+            if !haskey(EntryDict, (tempmonoomDim, tempmonoomK))
+                EntryDict[(tempmonoomDim, tempmonoomK)] = valueK * valueDim
+            else
+                EntryDict[(tempmonoomDim, tempmonoomK)] += valueK * valueDim
             end
         end
+    end
 
-    return EntryDict;
+    return EntryDict
 end
-
 
 # Compute the inner product more efficiently taking into account the ideal Imub.
 function ReduceInnerProductUsingImub(ReprRow, ReprCol)
     #we do the normal t-th level version. The corresponding representative set elements must be given as input arguments!
 
-        #compute the inner product, this is costly!
-        RowColKDict = Dict{Vector{Int8},Int128}()
-        EntryDict = Dict{Tuple{Vector{Int8},Vector{Int8}},Int128}()
+    #compute the inner product, this is costly!
+    RowColKDict = Dict{Vector{Int8}, Int128}()
+    EntryDict = Dict{Tuple{Vector{Int8}, Vector{Int8}}, Int128}()
 
-        #FIRST WITHOUT REVERSING
-        ReprKRow=ReprRow[1]; ReprDRow=ReprRow[2]; Prow = ReprRow[3]; Qrow = ReprRow[4];
-        ReprKCol=ReprCol[1]; ReprDCol=ReprCol[2]; Pcol = ReprCol[3]; Qcol = ReprCol[4];
-        t=size(ReprKRow[1][1],1)  # gives length of monomial in repr element, is t for level t, and t+1 for level t+0.5.
+    #FIRST WITHOUT REVERSING
+    ReprKRow = ReprRow[1]
+    ReprDRow = ReprRow[2]
+    Prow = ReprRow[3]
+    Qrow = ReprRow[4]
+    ReprKCol = ReprCol[1]
+    ReprDCol = ReprCol[2]
+    Pcol = ReprCol[3]
+    Qcol = ReprCol[4]
+    t = size(ReprKRow[1][1], 1)  # gives length of monomial in repr element, is t for level t, and t+1 for level t+0.5.
 
+    ##reduce K inner product
+    for wordssign1 in ReprKRow
+        firstpartword = wordssign1[1]
+        for wordssign2 in ReprKCol
+            tempmonoom = make_partition(Int8[firstpartword; wordssign2[1]])
 
-        ##reduce K inner product
-        for wordssign1 in ReprKRow
-            firstpartword = wordssign1[1]
-            for wordssign2 in ReprKCol
-                tempmonoom = make_partition(Int8[firstpartword;wordssign2[1]])
-
-                if !haskey(RowColKDict,tempmonoom)
-                    RowColKDict[tempmonoom] = wordssign1[2]
-                else
-                    RowColKDict[tempmonoom] += wordssign1[2]
-                end
+            if !haskey(RowColKDict, tempmonoom)
+                RowColKDict[tempmonoom] = wordssign1[2]
+            else
+                RowColKDict[tempmonoom] += wordssign1[2]
             end
         end
+    end
 
-        ##For all k inner products, reduce d inner product depending on k inner product
-        for (tempmonoomK, valueK)  in RowColKDict
-            ProductDArray = Tuple{Vector{Int8},Int128}[(zeros(Int8,2*t),1)];
-            # println("NIEUW K-MONOOM")
-            docheck1 = false
-            docheck2= false
-            if (tempmonoomK[1]==tempmonoomK[t+1] )
-                docheck1=true
-            end
-            if (tempmonoomK[t]==tempmonoomK[2*t] )
-                docheck2=true
-            end
+    ##For all k inner products, reduce d inner product depending on k inner product
+    for (tempmonoomK, valueK) in RowColKDict
+        ProductDArray = Tuple{Vector{Int8}, Int128}[(zeros(Int8, 2 * t), 1)]
+        # println("NIEUW K-MONOOM")
+        docheck1 = false
+        docheck2 = false
+        if (tempmonoomK[1] == tempmonoomK[t+1])
+            docheck1 = true
+        end
+        if (tempmonoomK[t] == tempmonoomK[2*t])
+            docheck2 = true
+        end
 
-            for i in unique(tempmonoomK)
-                currentKpart=findall(x->x==i, tempmonoomK);
-                ## the set of indices for which x==i is a combination of P[i1] and/or t+P'[i2]. First find the corresponding i1, i2 or both.
-                IndexSet = [0,0]
-                for i1=1:size(Prow,1)
-                    if Prow[i1][1] in currentKpart
-                        IndexSet[1]=i1;
-                    end
+        for i in unique(tempmonoomK)
+            currentKpart = findall(x -> x == i, tempmonoomK)
+            ## the set of indices for which x==i is a combination of P[i1] and/or t+P'[i2]. First find the corresponding i1, i2 or both.
+            IndexSet = [0, 0]
+            for i1 in 1:size(Prow, 1)
+                if Prow[i1][1] in currentKpart
+                    IndexSet[1] = i1
                 end
-                for i2=1:size(Pcol,1)
-                    if (Pcol[i2][1]+t) in currentKpart
-                        IndexSet[2]=i2;
-                    end
+            end
+            for i2 in 1:size(Pcol, 1)
+                if (Pcol[i2][1] + t) in currentKpart
+                    IndexSet[2] = i2
                 end
+            end
 
-                #compute D-innerproduct for this part
-                DpartInnerProduct = Dict{Vector{Int8},Int128}()
-                empty(DpartInnerProduct)
-                if IndexSet[1] != 0 && IndexSet[2] !=0
-                    #InnerProduct(ReprDRow[IndexSet[1]],ReprDcol[IndexSet[2]])
-                    for wordssign1 in ReprDRow[IndexSet[1]]
-                        for wordssign2 in ReprDCol[IndexSet[2]]
-                            if (docheck1 && 1 in currentKpart && wordssign1[1][1] !=wordssign2[1][1])
-                                continue
-                            end
-                            if (docheck2 && t in currentKpart && wordssign1[1][end] !=wordssign2[1][end])
-                                continue
-                            end
-                            temppartmonoomDim = make_partition([wordssign1[1];wordssign2[1]])
-                            # println("temppartmonoomDim:", temppartmonoomDim)
-                            if !haskey(DpartInnerProduct,temppartmonoomDim)
-                                DpartInnerProduct[temppartmonoomDim] = wordssign1[2]
-                            else
-                                DpartInnerProduct[temppartmonoomDim] += wordssign1[2]
-                            end
+            #compute D-innerproduct for this part
+            DpartInnerProduct = Dict{Vector{Int8}, Int128}()
+            empty(DpartInnerProduct)
+            if IndexSet[1] != 0 && IndexSet[2] != 0
+                #InnerProduct(ReprDRow[IndexSet[1]],ReprDcol[IndexSet[2]])
+                for wordssign1 in ReprDRow[IndexSet[1]]
+                    for wordssign2 in ReprDCol[IndexSet[2]]
+                        if (docheck1 && 1 in currentKpart && wordssign1[1][1] != wordssign2[1][1])
+                            continue
                         end
-                    end
-                else
-                    #determine which of the indexsets is nonzero and take relevant repr set part
-                    RelevantReprSetPart = IndexSet[1] != 0 ?  ReprDRow[IndexSet[1]] : ReprDCol[IndexSet[2]]
-                    for wordssign1 in RelevantReprSetPart
-                        temppartmonoomDim = make_partition(deepcopy(wordssign1[1]))
-                        if !haskey(DpartInnerProduct,temppartmonoomDim)
+                        if (docheck2 && t in currentKpart && wordssign1[1][end] != wordssign2[1][end])
+                            continue
+                        end
+                        temppartmonoomDim = make_partition([wordssign1[1]; wordssign2[1]])
+                        # println("temppartmonoomDim:", temppartmonoomDim)
+                        if !haskey(DpartInnerProduct, temppartmonoomDim)
                             DpartInnerProduct[temppartmonoomDim] = wordssign1[2]
                         else
                             DpartInnerProduct[temppartmonoomDim] += wordssign1[2]
                         end
                     end
                 end
-
-                NewProductDArray = Tuple{Vector{Int8},Int128}[];
-                for wordssign in ProductDArray
-                    for (dword, signd) in DpartInnerProduct
-                        # println("dword ",dword)
-                        # println("Kpart", currentKpart)
-                        newword = deepcopy(wordssign[1])
-                        # println("newword ",newword)
-                        newword[currentKpart].= dword
-                        # println("newword after modification ",newword)
-                        push!(NewProductDArray,(newword, signd*wordssign[2]))
+            else
+                #determine which of the indexsets is nonzero and take relevant repr set part
+                RelevantReprSetPart = IndexSet[1] != 0 ? ReprDRow[IndexSet[1]] : ReprDCol[IndexSet[2]]
+                for wordssign1 in RelevantReprSetPart
+                    temppartmonoomDim = make_partition(deepcopy(wordssign1[1]))
+                    if !haskey(DpartInnerProduct, temppartmonoomDim)
+                        DpartInnerProduct[temppartmonoomDim] = wordssign1[2]
+                    else
+                        DpartInnerProduct[temppartmonoomDim] += wordssign1[2]
                     end
                 end
-                ProductDArray = NewProductDArray
-                # println(ProductDArray)
             end
 
-            #reverse first part
-            tempmonoomK[1:t] = tempmonoomK[t:-1:1]
-
+            NewProductDArray = Tuple{Vector{Int8}, Int128}[]
             for wordssign in ProductDArray
-                tempmonoomDim= wordssign[1]
-                #reverse
-                tempmonoomDim[1:t] = tempmonoomDim[t:-1:1]
+                for (dword, signd) in DpartInnerProduct
+                    # println("dword ",dword)
+                    # println("Kpart", currentKpart)
+                    newword = deepcopy(wordssign[1])
+                    # println("newword ",newword)
+                    newword[currentKpart] .= dword
+                    # println("newword after modification ",newword)
+                    push!(NewProductDArray, (newword, signd * wordssign[2]))
+                end
+            end
+            ProductDArray = NewProductDArray
+            # println(ProductDArray)
+        end
 
+        #reverse first part
+        tempmonoomK[1:t] = tempmonoomK[t:-1:1]
 
-                ##add check
-                givesZeroElement = false
-                # if (tempmonoomK[t]==tempmonoomK[t+1] && tempmonoomDim[t] != tempmonoomDim[t+1])
-                #     givesZeroElement=true;
-                # elseif (tempmonoomK[2*t]==tempmonoomK[1] && tempmonoomDim[2*t] != tempmonoomDim[1])
-                #     givesZeroElement=true;
-                # end
-                if !givesZeroElement
-                    if !haskey(EntryDict,(tempmonoomDim, tempmonoomK))
-                            EntryDict[(tempmonoomDim, tempmonoomK)] = valueK*wordssign[2]
-                    else
-                            EntryDict[(tempmonoomDim, tempmonoomK)] +=  valueK*wordssign[2]
-                    end
+        for wordssign in ProductDArray
+            tempmonoomDim = wordssign[1]
+            #reverse
+            tempmonoomDim[1:t] = tempmonoomDim[t:-1:1]
+
+            ##add check
+            givesZeroElement = false
+            # if (tempmonoomK[t]==tempmonoomK[t+1] && tempmonoomDim[t] != tempmonoomDim[t+1])
+            #     givesZeroElement=true;
+            # elseif (tempmonoomK[2*t]==tempmonoomK[1] && tempmonoomDim[2*t] != tempmonoomDim[1])
+            #     givesZeroElement=true;
+            # end
+            if !givesZeroElement
+                if !haskey(EntryDict, (tempmonoomDim, tempmonoomK))
+                    EntryDict[(tempmonoomDim, tempmonoomK)] = valueK * wordssign[2]
+                else
+                    EntryDict[(tempmonoomDim, tempmonoomK)] += valueK * wordssign[2]
                 end
             end
         end
-    return EntryDict;
+    end
+    return EntryDict
 end
