@@ -129,15 +129,15 @@ function MUBWriteSDPASk(d, k, t, option=0)
     println("##### Writing the SDP...")
     ###start writing SDP file in SDPA-format (.dat-s)
     if (option == 1)  ## t+1/2th level
-        io = open(string("sdp_d$d", "_k$k", "_t$t", "_plushalf_i1part.dat-s"), "w")
-        iovars = open(string("variables_d$d", "_k$k", "_t$t", "_plushalf_i1part.txt"), "w")
-        ioExtraConstraints = open(string("extraConstraints_d$d", "_k$k", "_t$t", "_plushalf_i1part.txt"), "w")
-        ioTable = open(string("table_d$d", "_k$k", "_t$t", "_plushalf_i1part.txt"), "w")
+        io = open(string("../dat/sdp_d$d", "_k$k", "_t$t", "_plushalf_i1part.dat-s"), "w")
+        iovars = open(string("../dat/variables_d$d", "_k$k", "_t$t", "_plushalf_i1part.txt"), "w")
+        ioExtraConstraints = open(string("../dat/extraConstraints_d$d", "_k$k", "_t$t", "_plushalf_i1part.txt"), "w")
+        ioTable = open(string("../dat/table_d$d", "_k$k", "_t$t", "_plushalf_i1part.txt"), "w")
     else
-        io = open(string("sdp_d$d", "_k$k", "_t$t", "_i1part.dat-s"), "w")
-        iovars = open(string("variables_d$d", "_k$k", "_t$t", "_i1part.txt"), "w")
-        ioExtraConstraints = open(string("extraConstraints_d$d", "_k$k", "_t$t", "_i1part.txt"), "w")
-        ioTable = open(string("table_d$d", "_k$k", "_t$t", "_i1part.txt"), "w")
+        io = open(string("../dat/sdp_d$d", "_k$k", "_t$t", "_i1part.dat-s"), "w")
+        iovars = open(string("../dat/variables_d$d", "_k$k", "_t$t", "_i1part.txt"), "w")
+        ioExtraConstraints = open(string("../dat/extraConstraints_d$d", "_k$k", "_t$t", "_i1part.txt"), "w")
+        ioTable = open(string("../dat/table_d$d", "_k$k", "_t$t", "_i1part.txt"), "w")
     end
 
     for i in 1:nVars
@@ -416,15 +416,15 @@ function MUBWriteSDPA(d, k, t, option=0)
     println("##### Writing the SDP...")
     ###start writing SDP file in SDPA-format (.dat-s)
     if (option == 1)  ## t+1/2th level
-        io = open(string("sdp_d$d", "_k$k", "_t$t", "_plushalf.dat-s"), "w")
-        iovars = open(string("variables_d$d", "_k$k", "_t$t", "_plushalf.txt"), "w")
-        ioExtraConstraints = open(string("extraConstraints_d$d", "_k$k", "_t$t", "_plushalf.txt"), "w")
-        ioTable = open(string("table_d$d", "_k$k", "_t$t", "_plushalf.txt"), "w")
+        io = open(string("../dat/sdp_d$d", "_k$k", "_t$t", "_plushalf.dat-s"), "w")
+        iovars = open(string("../dat/variables_d$d", "_k$k", "_t$t", "_plushalf.txt"), "w")
+        ioExtraConstraints = open(string("../dat/extraConstraints_d$d", "_k$k", "_t$t", "_plushalf.txt"), "w")
+        ioTable = open(string("../dat/table_d$d", "_k$k", "_t$t", "_plushalf.txt"), "w")
     else
-        io = open(string("sdp_d$d", "_k$k", "_t$t", ".dat-s"), "w")
-        iovars = open(string("variables_d$d", "_k$k", "_t$t", ".txt"), "w")
-        ioExtraConstraints = open(string("extraConstraints_d$d", "_k$k", "_t$t", ".txt"), "w")
-        ioTable = open(string("table_d$d", "_k$k", "_t$t", ".txt"), "w")
+        io = open(string("../dat/sdp_d$d", "_k$k", "_t$t", ".dat-s"), "w")
+        iovars = open(string("../dat/variables_d$d", "_k$k", "_t$t", ".txt"), "w")
+        ioExtraConstraints = open(string("../dat/extraConstraints_d$d", "_k$k", "_t$t", ".txt"), "w")
+        ioTable = open(string("../dat/table_d$d", "_k$k", "_t$t", ".txt"), "w")
     end
 
     for i in 1:nVars
@@ -810,15 +810,15 @@ function MUBWriteSDPATEMP()
     println("##### Writing the SDP...")
     ###start writing SDP file in SDPA-format (.dat-s)
     if (option == 1)  ## t+1/2th level
-        io = open(string("sdp_d$d", "_k$k", "_t$t", "_plushalf.dat-s"), "w")
-        iovars = open(string("variables_d$d", "_k$k", "_t$t", "_plushalf.txt"), "w")
-        ioExtraConstraints = open(string("extraConstraints_d$d", "_k$k", "_t$t", "_plushalf.txt"), "w")
-        ioTable = open(string("table_d$d", "_k$k", "_t$t", "_plushalf.txt"), "w")
+        io = open(string("../dat/sdp_d$d", "_k$k", "_t$t", "_plushalf.dat-s"), "w")
+        iovars = open(string("../dat/variables_d$d", "_k$k", "_t$t", "_plushalf.txt"), "w")
+        ioExtraConstraints = open(string("../dat/extraConstraints_d$d", "_k$k", "_t$t", "_plushalf.txt"), "w")
+        ioTable = open(string("../dat/table_d$d", "_k$k", "_t$t", "_plushalf.txt"), "w")
     else
-        io = open(string("sdp_d$d", "_k$k", "_t$t", ".dat-s"), "w")
-        iovars = open(string("variables_d$d", "_k$k", "_t$t", ".txt"), "w")
-        ioExtraConstraints = open(string("extraConstraints_d$d", "_k$k", "_t$t", ".txt"), "w")
-        ioTable = open(string("table_d$d", "_k$k", "_t$t", ".txt"), "w")
+        io = open(string("../dat/sdp_d$d", "_k$k", "_t$t", ".dat-s"), "w")
+        iovars = open(string("../dat/variables_d$d", "_k$k", "_t$t", ".txt"), "w")
+        ioExtraConstraints = open(string("../dat/extraConstraints_d$d", "_k$k", "_t$t", ".txt"), "w")
+        ioTable = open(string("../dat/table_d$d", "_k$k", "_t$t", ".txt"), "w")
     end
 
     for i in 1:nVars
