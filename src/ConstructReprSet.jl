@@ -1,5 +1,3 @@
-setprecision(128)
-
 ## SIMPLE COMBINATORIAL FUNCTIONS TO WORK WITH TABLOIDS, TABLEAUX
 
 #generate the young shapes of a tableau of k boxes and height at most r
