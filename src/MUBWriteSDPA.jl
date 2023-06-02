@@ -11,15 +11,15 @@ include("DetValMon.jl")
 include("HelperFunctions.jl")
 
 #WRITES SEPARATE BLOCKS FOR I=1-part of t-th level of MOMENT MATRIX, USING THE SYMMETRY REDUCTION!
-function MUBWriteSDPASk(d, k, t;
-        option=false,
+function MUBWriteSDPASk(d::Int, k::Int, t::Int;
+        half=false,
         manual_epsilon=1e-16,  #if smaller than this epsilon, consider coefficient to be zero.
     )
     MonomialValuesDictionary = Dict()
     VarSet = Set{Tuple{Vector{Int}, Vector{Int}}}()
     println("##### Generating Representative Set...")
 
-    if option
+    if half
         println("#### CASE: d, k, t = ", d, " ", k, " ", t, "+1/2, i1-part.")
         @time BlocksElement = generatePartitionsTableauxPlusHalf(k, t, true)
         #println("##### Computing Inner Products in Base Block Diagonalization...")
@@ -48,14 +48,14 @@ function MUBWriteSDPASk(d, k, t;
         push!(BlockSizes, blockSize)
         println("Block of size ", blockSize)
         println("Generating representative set for this block... ")
-        if option
+        if half
             ReprSetArray = RepresentativeSkElementPlusHalf(indexobject, t, true)
             ReprColSetArray = RepresentativeSkElementPlusHalf(indexobject, t, false)
         else #t-th level
             ReprSetArray = RepresentativeSkElement(indexobject, t, true)
             ReprColSetArray = RepresentativeSkElement(indexobject, t, false)
         end
-        Block = Array{Dict{Tuple{Vector{Int64}, Vector{Int64}}, Rational{BigInt}}}(undef, blockSize, blockSize)
+        Block = Array{Dict{Tuple{Vector{Int64}, Vector{Int64}}, Rational{Int}}}(undef, blockSize, blockSize)
         for rowidx in 1:blockSize
             print("row ", rowidx, " \r")
             reprRowElement = ReprSetArray[rowidx]
@@ -63,19 +63,19 @@ function MUBWriteSDPASk(d, k, t;
                 reprColElement = ReprColSetArray[colidx]
                 if (colidx >= rowidx)
                     #compute the inner product.
-                    Block[rowidx, colidx] = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}()
-                    InnerProduct = ReduceInnerProduct(reprRowElement, reprColElement; option=option)
+                    Block[rowidx, colidx] = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}()
+                    InnerProduct = ReduceInnerProduct(reprRowElement, reprColElement; half=half)
                     for wordssignK in InnerProduct
                         tempmonoomK = wordssignK[1]
                         if !haskey(MonomialValuesDictionary, tempmonoomK)
-                            DictValueMon = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}()
+                            DictValueMon = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}()
                             NewVar, DictValueMon =
                                 DetValMon(VarSet, DictValueMon, d, deepcopy(Ivec), deepcopy(tempmonoomK), 1)
                             NewVar ? AddVariable(VarSet, DictValueMon) : 0
                             MonomialValuesDictionary[tempmonoomK] = DictValueMon
                         end
                         ##add dictionaries
-                        TempValueDictionary = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}()
+                        TempValueDictionary = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}()
                         [
                             TempValueDictionary[x] = MonomialValuesDictionary[tempmonoomK][x] * wordssignK[2] for
                             x in keys(MonomialValuesDictionary[tempmonoomK])
@@ -95,15 +95,15 @@ function MUBWriteSDPASk(d, k, t;
     println("Checking for additional constraints...")
     ##Now checking MUB-constraints
     ##for (d, k, t)=(7, 6, 4): normal inner products 150 sec (using the new inner product version exploiting tracial property/optimizations)
-    ListMissing = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}[]
+    ListMissing = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}[]
     time += @elapsed begin
         println("Checking Projector and Orthogonality constraints...")
-        @time append!(ListMissing, CheckImubProjectorOrthogonalitySk(d, k, t; option=option))
+        @time append!(ListMissing, CheckImubProjectorOrthogonalitySk(d, k, t; half=half))
         println("Checking MUB constraints...")
-        @time append!(ListMissing, CheckImubMUBSk(d, k, t; option=option))
+        @time append!(ListMissing, CheckImubMUBSk(d, k, t; half=half))
     end
     println("Checking Commutator Constraints...")
-    time += @elapsed append!(ListMissing, CheckImubCommutatorsSk(d, k, t; option=option))
+    time += @elapsed append!(ListMissing, CheckImubCommutatorsSk(d, k, t; half=half))
 
     nVars = length(VarSet)
     println("##### List of variables: ", VarSetOrdered)
@@ -120,7 +120,7 @@ function MUBWriteSDPASk(d, k, t;
 
     println("##### Writing the SDP...")
     ###start writing SDP file in SDPA-format (.dat-s)
-    if option
+    if half
         io = open(string("../dat/esdp_d$d", "_k$k", "_t$t", "_plushalf_i1part.dat-s"), "w")
         iovars = open(string("../dat/evariables_d$d", "_k$k", "_t$t", "_plushalf_i1part.txt"), "w")
         ioExtraConstraints = open(string("../dat/eextraConstraints_d$d", "_k$k", "_t$t", "_plushalf_i1part.txt"), "w")
@@ -215,7 +215,7 @@ function MUBWriteSDPASk(d, k, t;
     end
     close(io)
 
-    if option
+    if half
         println(ioTable, "time ", time)
         println(
             ioTable,
@@ -270,21 +270,14 @@ function MUBWriteSDPASk(d, k, t;
 end
 
 #WRITES SEPARATE BLOCKS FOR FULL t-th level of MOMENT MATRIX, USING THE FULL SYMMETRY REDUCTION OF THE WREATH PRODUCT GROUP S_d wr S_k
-function MUBWriteSDPA(d, k, t;
-        option=false,
+function MUBWriteSDPA(d::Int, k::Int, t::Int;
+        half=false,
         manual_epsilon=1e-16,  #if smaller than this epsilon, consider coefficient to be zero.
     )
 
-    if option
-        println("#### FULL SYMMETRY, CASE: d, k, t = ", d, " ", k, " ", t, "+1/2.")
-        println("##### Generating SetPartitions, Compositions, (Multi)Partitions and Tableaux...")
-        @time BlocksElement = GeneratePartitionsTableauxFullPlusHalf(d, k, t)
-
-    else  #generate representative set for t-th level
-        println("#### FULL SYMMETRY, CASE: d, k, t = ", d, " ", k, " ", t)
-        println("##### Generating SetPartitions, Compositions, (Multi)Partitions and Tableaux...")
-        @time BlocksElement = GeneratePartitionsTableauxFull(d, k, t)
-    end
+    println("#### FULL SYMMETRY, CASE: d, k, t = ", d, " ", k, " ", t, half ? "+1/2" : "")
+    println("##### Generating SetPartitions, Compositions, (Multi)Partitions and Tableaux...")
+    @time BlocksElement = GeneratePartitionsTableauxFullPlusHalf(d, k, t)
 
     println("##### Computing Block Diagonalization...")
     ReducedBlocks = []
@@ -305,7 +298,7 @@ function MUBWriteSDPA(d, k, t;
         println("Block of size ", blockSize)
         push!(BlockSizes, blockSize)
         println("Generating representative set for this block... ")
-        if option
+        if half
             for indexobject in CorrespondingRows
                 push!(ReprSetArray, RepresentativeFullElementPlusHalf(indexobject, true))
                 push!(ReprColSetArray, RepresentativeFullElementPlusHalf(indexobject, false))
@@ -319,7 +312,7 @@ function MUBWriteSDPA(d, k, t;
         # if blockindex == 3
         #     println("Representative set= ", ReprSetArray)
         # end
-        Block = Array{Dict{Tuple{Vector{Int8}, Vector{Int8}}, Rational{BigInt}}}(undef, blockSize, blockSize)
+        Block = Array{Dict{Tuple{Vector{Int8}, Vector{Int8}}, Rational{Int}}}(undef, blockSize, blockSize)
         println("Computing inner products for this block... ")
 
         for rowindex in 1:blockSize
@@ -332,14 +325,14 @@ function MUBWriteSDPA(d, k, t;
                 timerinnerproduct += @elapsed TotalInnerProducts =
                     ReduceInnerProductUsingImub(ReprSetArray[rowindex], ReprColSetArray[colindex])
 
-                Block[rowindex, colindex] = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}()
+                Block[rowindex, colindex] = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}()
                 for (monomialpair, value) in TotalInnerProducts
                     tempmonoomd = monomialpair[1]
                     tempmonoomK = monomialpair[2]
 
                     if !haskey(MonomialValuesDictionary, monomialpair)
                         ifcounter += 1
-                        DictValueMon = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}()
+                        DictValueMon = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}()
                         timer += @elapsed NewVar, DictValueMon =
                             DetValMon(VarSet, DictValueMon, d, deepcopy(tempmonoomd), deepcopy(tempmonoomK), 1)
                         NewVar ? AddVariable(VarSet, DictValueMon) : 0
@@ -348,7 +341,7 @@ function MUBWriteSDPA(d, k, t;
                         elsecounter += 1
                     end
                     ##add dictionaries
-                    TempValueDictionary = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}()
+                    TempValueDictionary = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}()
                     [
                         TempValueDictionary[x] = MonomialValuesDictionary[monomialpair][x] * value for
                         x in keys(MonomialValuesDictionary[monomialpair])
@@ -375,14 +368,14 @@ function MUBWriteSDPA(d, k, t;
     println("Checking for additional constraints...")
     ##Now checking MUB-constraints
     ##for (d, k, t)=(7, 6, 4): normal inner products 150 sec (using the new inner product version exploiting tracial property/optimizations)
-    ListMissing = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}[]
-    time += @elapsed if option
+    ListMissing = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}[]
+    time += @elapsed if half
         println("Checking Projector and Orthogonality constraints...")
-        @time append!(ListMissing, CheckImubProjectorOrthogonality(d, k, t; option=true))
+        @time append!(ListMissing, CheckImubProjectorOrthogonality(d, k, t; half=true))
         println("Checking POVM constraints...")
-        @time append!(ListMissing, CheckImubPOVMSimple(d, k, t; option=true))
+        @time append!(ListMissing, CheckImubPOVMSimple(d, k, t; half=true))
         println("Checking MUB constraints...")
-        @time append!(ListMissing, CheckImubMUBSimple(d, k, t; option=true))
+        @time append!(ListMissing, CheckImubMUBSimple(d, k, t; half=true))
     else
         println("Checking Projector and Orthogonality constraints...")
         @time append!(ListMissing, CheckImubProjectorOrthogonality(d, k, t))
@@ -392,7 +385,7 @@ function MUBWriteSDPA(d, k, t;
         @time append!(ListMissing, CheckImubMUBSimple(d, k, t))
     end
     println("Checking Commutator Constraints...")
-    time += @elapsed append!(ListMissing, CheckImubCommutatorsV2(d, k, t; option=option))
+    time += @elapsed append!(ListMissing, CheckImubCommutatorsV2(d, k, t; half=half))
 
     nVars = length(VarSet)
     println("##### List of variables: ", VarSetOrdered)
@@ -408,17 +401,10 @@ function MUBWriteSDPA(d, k, t;
 
     println("##### Writing the SDP...")
     ###start writing SDP file in SDPA-format (.dat-s)
-    if option
-        io = open(string("../dat/esdp_d$d", "_k$k", "_t$t", "_plushalf.dat-s"), "w")
-        iovars = open(string("../dat/evariables_d$d", "_k$k", "_t$t", "_plushalf.txt"), "w")
-        ioExtraConstraints = open(string("../dat/eextraConstraints_d$d", "_k$k", "_t$t", "_plushalf.txt"), "w")
-        ioTable = open(string("../dat/etable_d$d", "_k$k", "_t$t", "_plushalf.txt"), "w")
-    else
-        io = open(string("../dat/esdp_d$d", "_k$k", "_t$t", ".dat-s"), "w")
-        iovars = open(string("../dat/evariables_d$d", "_k$k", "_t$t", ".txt"), "w")
-        ioExtraConstraints = open(string("../dat/eextraConstraints_d$d", "_k$k", "_t$t", ".txt"), "w")
-        ioTable = open(string("../dat/etable_d$d", "_k$k", "_t$t", ".txt"), "w")
-    end
+    io = open(string("../dat/esdp_d$d", "_k$k", "_t$t", half ? "_plushalf" : "", ".dat-s"), "w")
+    iovars = open(string("../dat/evariables_d$d", "_k$k", "_t$t", half ? "_plushalf" : "", ".txt"), "w")
+    ioExtraConstraints = open(string("../dat/eextraConstraints_d$d", "_k$k", "_t$t", half ? "_plushalf" : "", ".txt"), "w")
+    ioTable = open(string("../dat/etable_d$d", "_k$k", "_t$t", half ? "_plushalf" : "", ".txt"), "w")
 
     for i in 1:nVars
         println(iovars, i, " ", VarSetOrdered[i])
@@ -504,14 +490,14 @@ function MUBWriteSDPA(d, k, t;
     close(io)
 
     #generate nonreduced version
-    if option
+    if half
         BlocksElement = GeneratePartitionsTableauxFullPlusHalf(d, k, t, 0)
     else  #generate representative set for t-th level
         BlocksElement = GeneratePartitionsTableauxFull(d, k, t, 0)
     end
     BlockSizesNonReduced = [size(x, 1) for (MultiPartition, x) in BlocksElement]
 
-    if option
+    if half
         println(ioTable, "time ", time)
         println(
             ioTable,
@@ -581,10 +567,10 @@ function MUBWriteSDPATEMP()
     d = 6
     k = 7
     t = 5
-    option = true
+    half = true
     manual_epsilon = 1e-16  #if smaller than this epsilon, consider coefficient to be zero.
 
-    if option
+    if half
         println("#### FULL SYMMETRY, CASE: d, k, t = ", d, " ", k, " ", t, "+1/2.")
         println("##### Generating SetPartitions, Compositions, (Multi)Partitions and Tableaux...")
         @time BlocksElement = GeneratePartitionsTableauxFullPlusHalf(d, k, t)
@@ -615,7 +601,7 @@ function MUBWriteSDPATEMP()
         println("Block of size ", blockSize)
         push!(BlockSizes, blockSize)
         println("Generating representative set for this block... ")
-        if option
+        if half
             for indexobject in CorrespondingRows
                 push!(ReprSetArray, RepresentativeFullElementPlusHalf(indexobject, true))
                 push!(ReprColSetArray, RepresentativeFullElementPlusHalf(indexobject, false))
@@ -629,7 +615,7 @@ function MUBWriteSDPATEMP()
         # if blockindex == 3
         #     println("Representative set= ", ReprSetArray)
         # end
-        Block = Array{Dict{Tuple{Vector{Int8}, Vector{Int8}}, Rational{BigInt}}}(undef, blockSize, blockSize)
+        Block = Array{Dict{Tuple{Vector{Int8}, Vector{Int8}}, Rational{Int}}}(undef, blockSize, blockSize)
         println("Computing inner products for this block... ")
 
         for rowindex in 1:blockSize
@@ -642,14 +628,14 @@ function MUBWriteSDPATEMP()
                 timerinnerproduct += @elapsed TotalInnerProducts =
                     ReduceInnerProductUsingImub(ReprSetArray[rowindex], ReprColSetArray[colindex])
 
-                Block[rowindex, colindex] = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}()
+                Block[rowindex, colindex] = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}()
                 for (monomialpair, value) in TotalInnerProducts
                     tempmonoomd = monomialpair[1]
                     tempmonoomK = monomialpair[2]
 
                     if !haskey(MonomialValuesDictionary, monomialpair)
                         ifcounter += 1
-                        DictValueMon = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}()
+                        DictValueMon = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}()
                         timer += @elapsed NewVar, DictValueMon =
                             DetValMon(VarSet, DictValueMon, d, deepcopy(tempmonoomd), deepcopy(tempmonoomK), 1)
                         NewVar ? AddVariable(VarSet, DictValueMon) : 0
@@ -658,7 +644,7 @@ function MUBWriteSDPATEMP()
                         elsecounter += 1
                     end
                     ##add dictionaries
-                    TempValueDictionary = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}()
+                    TempValueDictionary = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}()
                     [
                         TempValueDictionary[x] = MonomialValuesDictionary[monomialpair][x] * value for
                         x in keys(MonomialValuesDictionary[monomialpair])
@@ -688,7 +674,7 @@ function MUBWriteSDPATEMP()
 
     nVars = length(VarSet)
     println("##### List of variables: ", VarSetOrdered)
-    newConstraints = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}[
+    newConstraints = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}[
         Dict{Any, Any}(
             ([-1], [-1]) => 5.14403292181069958847736625514403292191e-06,
             ([0, 0, 1, 1, 0, 0, 0, 1, 1, 0], [0, 1, 0, 1, 0, 1, 2, 1, 0, 2]) => 1.0,
@@ -801,17 +787,10 @@ function MUBWriteSDPATEMP()
 
     println("##### Writing the SDP...")
     ###start writing SDP file in SDPA-format (.dat-s)
-    if option
-        io = open(string("../dat/esdp_d$d", "_k$k", "_t$t", "_plushalf.dat-s"), "w")
-        iovars = open(string("../dat/evariables_d$d", "_k$k", "_t$t", "_plushalf.txt"), "w")
-        ioExtraConstraints = open(string("../dat/eextraConstraints_d$d", "_k$k", "_t$t", "_plushalf.txt"), "w")
-        ioTable = open(string("../dat/etable_d$d", "_k$k", "_t$t", "_plushalf.txt"), "w")
-    else
-        io = open(string("../dat/esdp_d$d", "_k$k", "_t$t", ".dat-s"), "w")
-        iovars = open(string("../dat/evariables_d$d", "_k$k", "_t$t", ".txt"), "w")
-        ioExtraConstraints = open(string("../dat/eextraConstraints_d$d", "_k$k", "_t$t", ".txt"), "w")
-        ioTable = open(string("../dat/etable_d$d", "_k$k", "_t$t", ".txt"), "w")
-    end
+    io = open(string("../dat/esdp_d$d", "_k$k", "_t$t", half ? "_plushalf" : "", ".dat-s"), "w")
+    iovars = open(string("../dat/evariables_d$d", "_k$k", "_t$t", half ? "_plushalf" : "", ".txt"), "w")
+    ioExtraConstraints = open(string("../dat/eextraConstraints_d$d", "_k$k", "_t$t", half ? "_plushalf" : "", ".txt"), "w")
+    ioTable = open(string("../dat/etable_d$d", "_k$k", "_t$t", half ? "_plushalf" : "", ".txt"), "w")
 
     for i in 1:nVars
         println(iovars, i, " ", VarSetOrdered[i])
@@ -897,14 +876,14 @@ function MUBWriteSDPATEMP()
     close(io)
 
     #generate nonreduced version
-    if option
+    if half
         BlocksElement = GeneratePartitionsTableauxFullPlusHalf(d, k, t, 0)
     else  #generate representative set for t-th level
         BlocksElement = GeneratePartitionsTableauxFull(d, k, t, 0)
     end
     BlockSizesNonReduced = [size(x, 1) for (MultiPartition, x) in BlocksElement]
 
-    if option
+    if half
         println(ioTable, "time ", time)
         println(
             ioTable,
@@ -970,11 +949,11 @@ function MUBWriteSDPATEMP()
 end
 
 #check projector constraint on homogeneous polynomials of degree 2t-2
-#option 1 is level +half, so check for polynomials of degree 2t-1
-function CheckImubProjectorOrthogonality(d, k, t; option=false)
-    ListOfReducedMonomials = ReducedMonomials(d, k, 2 * t - 2 + option)
+#half 1 is level +half, so check for polynomials of degree 2t-1
+function CheckImubProjectorOrthogonality(d::Int, k::Int, t::Int; half=false)
+    ListOfReducedMonomials = ReducedMonomials(d, k, 2 * t - 2 + half)
     VarSet = Set{Tuple{Vector{Int}, Vector{Int}}}()
-    ListMissing = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}[]
+    ListMissing = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}[]
     for monomialpair in ListOfReducedMonomials
         Ivec = monomialpair[1]
         Kvec = monomialpair[2]
@@ -984,9 +963,9 @@ function CheckImubProjectorOrthogonality(d, k, t; option=false)
                 tempKvec = push!(deepcopy(Kvec), j - 1)
                 tempIvec2 = push!(deepcopy(Ivec), i - 1, i - 1)
                 tempKvec2 = push!(deepcopy(Kvec), j - 1, j - 1)
-                VarSet, Dict1 = DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}(), d, tempIvec, tempKvec, 1)
+                VarSet, Dict1 = DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}(), d, tempIvec, tempKvec, 1)
                 VarSet, Dict2 =
-                    DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}(), d, tempIvec2, tempKvec2, -1)
+                    DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}(), d, tempIvec2, tempKvec2, -1)
                 testValue = merge(+, Dict1, Dict2)
 
                 if !checkValue(testValue)
@@ -997,7 +976,7 @@ function CheckImubProjectorOrthogonality(d, k, t; option=false)
                         tempIvec3 = push!(deepcopy(Ivec), i - 1, i2 - 1)
                         tempKvec3 = push!(deepcopy(Kvec), j - 1, j - 1)
                         VarSet, Dict3 =
-                            DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}(), d, tempIvec3, tempKvec3, 1)
+                            DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}(), d, tempIvec3, tempKvec3, 1)
                         if !checkValue(Dict3)
                             push!(ListMissing, Dict3)
                         end
@@ -1010,11 +989,11 @@ function CheckImubProjectorOrthogonality(d, k, t; option=false)
 end
 
 #check MUB-constraint on homogeneous polynomials of degree 2t-3
-#option 1 is level +half, so check for polynomials of degree 2t-2
-function CheckImubMUBSimple(d, k, t; option=false)
-    ListOfReducedMonomials = ReducedMonomialsv2(d, k, 2 * t - 3 + option)
+#half 1 is level +half, so check for polynomials of degree 2t-2
+function CheckImubMUBSimple(d::Int, k::Int, t::Int; half=false)
+    ListOfReducedMonomials = ReducedMonomialsv2(d, k, 2 * t - 3 + half)
     VarSet = Set{Tuple{Vector{Int}, Vector{Int}}}()
-    ListMissing = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}[]
+    ListMissing = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}[]
     for monomialpair in ListOfReducedMonomials
         Ivec = monomialpair[1]
         Kvec = monomialpair[2]
@@ -1023,7 +1002,7 @@ function CheckImubMUBSimple(d, k, t; option=false)
                 tempIvec = push!(deepcopy(Ivec), i - 1)
                 tempKvec = push!(deepcopy(Kvec), j - 1)
                 VarSet, Dict1 =
-                    DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}(), d, tempIvec, tempKvec, Rational{BigInt}(1 / d))
+                    DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}(), d, tempIvec, tempKvec, inv(Rational{Int}(d)))
                 for j2 in 1:k
                     if j2 != j
                         for i2 in 1:d
@@ -1031,7 +1010,7 @@ function CheckImubMUBSimple(d, k, t; option=false)
                             tempKvec2 = push!(deepcopy(Kvec), j - 1, j2 - 1, j - 1)
                             VarSet, Dict2 = DetValMon(
                                 VarSet,
-                                Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}(),
+                                Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}(),
                                 d,
                                 tempIvec2,
                                 tempKvec2,
@@ -1051,16 +1030,16 @@ function CheckImubMUBSimple(d, k, t; option=false)
 end
 
 #check MUB-constraint on homogeneous polynomials of degree 2t-1
-#option 1 is level +half, so check for polynomials of degree 2t
-function CheckImubPOVMSimple(d, k, t; option=false)
-    ListOfReducedMonomials = ReducedMonomialsv2(d, k, 2 * t - 1 + option)
+#half 1 is level +half, so check for polynomials of degree 2t
+function CheckImubPOVMSimple(d::Int, k::Int, t::Int; half=false)
+    ListOfReducedMonomials = ReducedMonomialsv2(d, k, 2 * t - 1 + half)
     VarSet = Set{Tuple{Vector{Int}, Vector{Int}}}()
-    ListMissing = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}[]
+    ListMissing = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}[]
     for monomialpair in ListOfReducedMonomials
         Ivec = monomialpair[1]
         Kvec = monomialpair[2]
         VarSet, Dict1 =
-            DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}(), d, deepcopy(Ivec), deepcopy(Kvec), 1)
+            DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}(), d, deepcopy(Ivec), deepcopy(Kvec), 1)
         for j in 1:minimum([maximum(Kvec) + 2, k])
             testValue = deepcopy(Dict1)
             indices_of_basis = findall(x -> x == j - 1, Kvec)
@@ -1071,7 +1050,7 @@ function CheckImubPOVMSimple(d, k, t; option=false)
                 tempIvec2 = push!(deepcopy(Ivec), i - 1)
                 tempKvec2 = push!(deepcopy(Kvec), j - 1)
                 VarSet, Dict2 =
-                    DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}(), d, tempIvec2, tempKvec2, -1)
+                    DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}(), d, tempIvec2, tempKvec2, -1)
                 testValue = merge(+, testValue, Dict2)
             end
             if maximumIvec + 1 < d
@@ -1079,7 +1058,7 @@ function CheckImubPOVMSimple(d, k, t; option=false)
                 tempKvec2 = push!(deepcopy(Kvec), j - 1)
                 VarSet, Dict2 = DetValMon(
                     VarSet,
-                    Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}(),
+                    Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}(),
                     d,
                     tempIvec2,
                     tempKvec2,
@@ -1095,7 +1074,7 @@ function CheckImubPOVMSimple(d, k, t; option=false)
     return unique(ListMissing)
 end
 
-function checkValue(MonomialDict::Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}, treshold=0.00000000001)
+function checkValue(MonomialDict::Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}, treshold=0.00000000001)
     for (key, value) in MonomialDict
         if abs(value) > treshold
             return false
@@ -1105,17 +1084,17 @@ function checkValue(MonomialDict::Dict{Tuple{Vector{Int}, Vector{Int}}, Rational
 end
 
 function ComputeTotalInnerProduct(MonomialValuesDictionary, TotalInnerProducts, VarSet, d)
-    TestValueDictionary = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}()
+    TestValueDictionary = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}()
     for (monomialpair, value) in TotalInnerProducts
         tempmonoomd = monomialpair[1]
         tempmonoomK = monomialpair[2]
         if !haskey(MonomialValuesDictionary, monomialpair)
-            DictValueMon = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}()
+            DictValueMon = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}()
             VarSet, DictValueMon = DetValMon(VarSet, DictValueMon, d, deepcopy(tempmonoomd), deepcopy(tempmonoomK), 1)
             MonomialValuesDictionary[monomialpair] = DictValueMon
         end
         ##add dictionaries
-        TempValueDictionary = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}()
+        TempValueDictionary = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}()
         [
             TempValueDictionary[x] = MonomialValuesDictionary[monomialpair][x] * value for
             x in keys(MonomialValuesDictionary[monomialpair])
@@ -1134,7 +1113,7 @@ function RemoveLinearDependentConstraints(ListMissing, VarSetOrdered)
     treshold = 0.0000000001
     numberOfVariables = size(TempVarSet, 1)
     push!(TempVarSet, ([-1], [-1]))
-    Matrix = zeros(Rational{BigInt}, size(ListMissing, 1), numberOfVariables + 1)
+    Matrix = zeros(Rational{Int}, size(ListMissing, 1), numberOfVariables + 1)
 
     for i in 1:size(ListMissing, 1)
         for j in 1:numberOfVariables+1
@@ -1163,7 +1142,7 @@ function RemoveLinearDependentConstraints(ListMissing, VarSetOrdered)
 end
 
 ##Check the commutator constraint on monomials
-function CheckImubCommutators(degu, degv, d, k, degt)
+function CheckImubCommutators(degu::Int, degv::Int, d::Int, k::Int, degt::Int)
     wordsU = degu >= degt ? ReducedMonomials(d, k, degu + 1) : GenMonNC(d, k, degu)
     wordsV = GenMonNC(d, k, degv)
     ListMissing = []
@@ -1201,7 +1180,7 @@ function CheckImubCommutators(degu, degv, d, k, degt)
             wordtK = degt > degu ? wordsT[i][2][2:end] : wordsT[i, degt+1:2*degt] .- 1
             VarSet, TempDict1 = DetValMon(
                 Set{Tuple{Vector{Int}, Vector{Int}}}(),
-                Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}(),
+                Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}(),
                 d,
                 deepcopy([wordI; wordtI]),
                 deepcopy([wordK; wordtK]),
@@ -1209,7 +1188,7 @@ function CheckImubCommutators(degu, degv, d, k, degt)
             )
             VarSet, TempDict2 = DetValMon(
                 Set{Tuple{Vector{Int}, Vector{Int}}}(),
-                Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}(),
+                Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}(),
                 d,
                 deepcopy([wordI2; wordtI]),
                 deepcopy([wordK2; wordtK]),
@@ -1226,27 +1205,27 @@ function CheckImubCommutators(degu, degv, d, k, degt)
 end
 
 ##Check the commutator constraint on monomials
-##option 0 = normal t-th level
-##option 1 = level t+1/2.
-function CheckImubCommutatorsV2(d, k, t; option=false)
-    ReducedWords = ReducedMonomials(d, k, 2 * t - 2 + option)
+##half 0 = normal t-th level
+##half 1 = level t+1/2.
+function CheckImubCommutatorsV2(d::Int, k::Int, t::Int; half=false)
+    ReducedWords = ReducedMonomials(d, k, 2 * t - 2 + half)
     ListMissing = []
     VarSet = Set{Tuple{Vector{Int}, Vector{Int}}}()
     testpairs = []
-    if 2 * t - 9 + option > 0
+    if 2 * t - 9 + half > 0
         push!(testpairs, [3, 3])
     end
-    if 2 * t - 8 + option > 0
+    if 2 * t - 8 + half > 0
         push!(testpairs, [3, 2])
     end
-    if 2 * t - 7 + option > 0
+    if 2 * t - 7 + half > 0
         push!(testpairs, [2, 2])
     end
     for i in 1:size(ReducedWords, 1)
         # println(ReducedWords[i])
         wordI = ReducedWords[i][1]
         wordK = ReducedWords[i][2]
-    ##now do (degu, degv)=(3, 3); only if 2*t-9+option>0
+    ##now do (degu, degv)=(3, 3); only if 2*t-9+half>0
     for testpair in testpairs
         degu = testpair[1]
         degv = testpair[2]
@@ -1256,7 +1235,7 @@ function CheckImubCommutatorsV2(d, k, t; option=false)
         WordKToTest2 = [0; wordK[degu+2:degu+degv+1]; 0; wordK[2:degu+1]; 0; wordK[degu+degv+2:end]]
         VarSet, TempDict1 = DetValMon(
             VarSet,
-            Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}(),
+            Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}(),
             d,
             deepcopy(WordIToTest),
             deepcopy(WordKToTest),
@@ -1264,7 +1243,7 @@ function CheckImubCommutatorsV2(d, k, t; option=false)
         )
         VarSet, TempDict2 = DetValMon(
             VarSet,
-            Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}(),
+            Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}(),
             d,
             deepcopy(WordIToTest2),
             deepcopy(WordKToTest2),
@@ -1282,15 +1261,15 @@ return unique(ListMissing) #RemoveLinearDependentConstraints(unique(ListMissing)
 end
 
 ##Counts variables
-function CountVariables(d, k, t; option=false)
-ReducedWords = ReducedMonomialsv2(d, k, 2 * t + option)
+function CountVariables(d::Int, k::Int, t::Int; half=false)
+ReducedWords = ReducedMonomialsv2(d, k, 2 * t + half)
 ListMissing = []
 VarSet = Set{Tuple{Vector{Int}, Vector{Int}}}()
 for i in 1:size(ReducedWords, 1)
     # println(ReducedWords[i])
     WordI = ReducedWords[i][1]
     WordK = ReducedWords[i][2]
-    VarSet, Dict2 = DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}(), d, WordI, WordK, 1)
+    VarSet, Dict2 = DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}(), d, WordI, WordK, 1)
 end
 println(VarSet)
 println("There are ", length(VarSet), " variables.")
@@ -1300,11 +1279,11 @@ end
 #------------Checks for Sk-----------------
 
 #check projector constraint on homogeneous polynomials of degree 2t-2, ONLY I=1, 1, 1, 1, 1=part ("Sk"-part)
-#option 1 is level +half, so check for polynomials of degree 2t-1
-function CheckImubProjectorOrthogonalitySk(d, k, t; option=false)
-ListOfMonomials = MonomialsSk(k, 2 * t - 2 + option)
+#half 1 is level +half, so check for polynomials of degree 2t-1
+function CheckImubProjectorOrthogonalitySk(d::Int, k::Int, t::Int; half=false)
+ListOfMonomials = MonomialsSk(k, 2 * t - 2 + half)
 VarSet = Set{Tuple{Vector{Int}, Vector{Int}}}()
-ListMissing = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}[]
+ListMissing = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}[]
 for monomial in ListOfMonomials
     Kvec = monomial
     Ivec = zeros(Int, size(Kvec, 1))
@@ -1313,8 +1292,8 @@ for monomial in ListOfMonomials
         tempKvec = push!(deepcopy(Kvec), j - 1)
         tempIvec2 = push!(deepcopy(Ivec), 0, 0)
         tempKvec2 = push!(deepcopy(Kvec), j - 1, j - 1)
-        NewVar, Dict1 = DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}(), d, tempIvec, tempKvec, 1)
-        NewVar, Dict2 = DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}(), d, tempIvec2, tempKvec2, -1)
+        NewVar, Dict1 = DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}(), d, tempIvec, tempKvec, 1)
+        NewVar, Dict2 = DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}(), d, tempIvec2, tempKvec2, -1)
         testValue = merge(+, Dict1, Dict2)
         if !checkValue(testValue)
             AddVariable(VarSet, testValue)
@@ -1327,11 +1306,11 @@ return RemoveLinearDependentConstraints(unique(ListMissing), VarSetOrdered)
 end
 
 #check MUB-constraint on homogeneous polynomials of degree 2t-3, ONLY I=1, 1, 1, 1, 1=part ("Sk"-part)
-#option 1 is level +half, so check for polynomials of degree 2t-2
-function CheckImubMUBSk(d, k, t; option=false)
-    ListOfMonomials = MonomialsSk(k, 2 * t - 3 + option)   ### BE CAREFUL, CAN BE REDUCED STILL (make "REDUCEDMonomialsSK in which projector-constraint is used.)
+#half 1 is level +half, so check for polynomials of degree 2t-2
+function CheckImubMUBSk(d::Int, k::Int, t::Int; half=false)
+    ListOfMonomials = MonomialsSk(k, 2 * t - 3 + half)   ### BE CAREFUL, CAN BE REDUCED STILL (make "REDUCEDMonomialsSK in which projector-constraint is used.)
     VarSet = Set{Tuple{Vector{Int}, Vector{Int}}}()
-    ListMissing = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}[]
+    ListMissing = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}[]
     for monomial in ListOfMonomials
         Ivec = zeros(Int, size(monomial, 1))
         Kvec = monomial
@@ -1339,13 +1318,13 @@ function CheckImubMUBSk(d, k, t; option=false)
             tempIvec = push!(deepcopy(Ivec), 0)
             tempKvec = push!(deepcopy(Kvec), j - 1)
             NewVar, Dict1 =
-            DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}(), d, tempIvec, tempKvec, Rational{BigInt}(1 / d))
+            DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}(), d, tempIvec, tempKvec, inv(Rational{Int}(d)))
             for j2 in 1:k
                 if j2 != j
                     tempIvec2 = push!(deepcopy(Ivec), 0, 0, 0)
                     tempKvec2 = push!(deepcopy(Kvec), j - 1, j2 - 1, j - 1)
                     NewVar, Dict2 =
-                    DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}(), d, tempIvec2, tempKvec2, -1)
+                    DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}(), d, tempIvec2, tempKvec2, -1)
                     testValue = merge(+, Dict1, Dict2)
                     if !checkValue(testValue)
                         AddVariable(VarSet, testValue)
@@ -1360,27 +1339,27 @@ function CheckImubMUBSk(d, k, t; option=false)
 end
 
 ##Check the commutator constraint on monomials, ONLY I=1, 1, 1, 1, 1=part ("Sk"-part)
-##option 0 = normal t-th level
-##option 1 = level t+1/2.
-function CheckImubCommutatorsSk(d, k, t; option=false)
-ReducedWords = MonomialsSk(k, 2 * t - 2 + option)
+##half 0 = normal t-th level
+##half 1 = level t+1/2.
+function CheckImubCommutatorsSk(d::Int, k::Int, t::Int; half=false)
+ReducedWords = MonomialsSk(k, 2 * t - 2 + half)
 ListMissing = []
 VarSet = Set{Tuple{Vector{Int}, Vector{Int}}}()
 testpairs = []
-if 2 * t - 9 + option > 0
+if 2 * t - 9 + half > 0
     push!(testpairs, [3, 3])
 end
-if 2 * t - 8 + option > 0
+if 2 * t - 8 + half > 0
     push!(testpairs, [3, 2])
 end
-if 2 * t - 7 + option > 0
+if 2 * t - 7 + half > 0
     push!(testpairs, [2, 2])
 end
 for i in 1:size(ReducedWords, 1)
     # println(ReducedWords[i])
     wordK = ReducedWords[i]
-    wordI = zeros(Int, 2 * t + option)
-    ##now do (degu, degv)=(3, 3); only if 2*t-9+option>0
+    wordI = zeros(Int, 2 * t + half)
+    ##now do (degu, degv)=(3, 3); only if 2*t-9+half>0
         for testpair in testpairs
             degu = testpair[1]
             degv = testpair[2]
@@ -1388,7 +1367,7 @@ for i in 1:size(ReducedWords, 1)
             WordKToTest2 = [0; wordK[degu+2:degu+degv+1]; 0; wordK[2:degu+1]; 0; wordK[degu+degv+2:end]]
             NewVar, TempDict1 = DetValMon(
                 VarSet,
-                Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}(),
+                Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}(),
                 d,
                 deepcopy(wordI),
                 deepcopy(WordKToTest),
@@ -1397,7 +1376,7 @@ for i in 1:size(ReducedWords, 1)
             #NewVar ? AddVariable(VarSet, TempDict1) : 0
             NewVar, TempDict2 = DetValMon(
                 VarSet,
-                Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}(),
+                Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}(),
                 d,
                 deepcopy(wordI),
                 deepcopy(WordKToTest2),

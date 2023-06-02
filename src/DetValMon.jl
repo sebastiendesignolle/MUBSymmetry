@@ -40,7 +40,7 @@ function DetValMon(VarSet, DictValueMon, d, Ivec, Kvec, coeff)
         if (length(sameBasis) == 1)
             deleteat!(Kvec, sameBasis[1])
             deleteat!(Ivec, sameBasis[1])
-            return DetValMon(VarSet, DictValueMon, d, Ivec, Kvec, coeff * (1 / Rational{BigInt}(d)))
+            return DetValMon(VarSet, DictValueMon, d, Ivec, Kvec, coeff * (1 / Rational{Int}(d)))
         end
     end
 
@@ -73,11 +73,11 @@ function DetValMon(VarSet, DictValueMon, d, Ivec, Kvec, coeff)
                         d,
                         Ipart1,
                         Kpart1,
-                        coeff * (1 / Rational{BigInt}(d + 1 - length(Ivec_occurring_unique))),
+                        coeff * (1 / Rational{Int}(d + 1 - length(Ivec_occurring_unique))),
                     )
                     #Minus the others:
                     for basiselt in Ivec_occurring_unique
-                        TempDictionary = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}()
+                        TempDictionary = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}()
                         if Ivec[index1] != basiselt
                             Ivectemp = deepcopy(Ivec)
                             Kvectemp = deepcopy(Kvec)
@@ -89,13 +89,13 @@ function DetValMon(VarSet, DictValueMon, d, Ivec, Kvec, coeff)
                                 d,
                                 Ivectemp,
                                 Kvectemp,
-                                -coeff * (1 / Rational{BigInt}(d + 1 - length(Ivec_occurring_unique))),
+                                -coeff * (1 / Rational{Int}(d + 1 - length(Ivec_occurring_unique))),
                             )
                             DictValueMon = merge(+, DictValueMon, TempDictionary)
                         end
                     end
-                    # return value_to_return/Rational{BigInt}(d+1-length(Ivec_occurring_unique));
-                    # return VarSet,DictValueMon = DetValMon(VarSet,DictValueMon,d,Ivec,Kvec,coeff/Rational{BigInt}(d+1-length(Ivec_occurring_unique)); #I have modified the coefficient above instead
+                    # return value_to_return/Rational{Int}(d+1-length(Ivec_occurring_unique));
+                    # return VarSet,DictValueMon = DetValMon(VarSet,DictValueMon,d,Ivec,Kvec,coeff/Rational{Int}(d+1-length(Ivec_occurring_unique)); #I have modified the coefficient above instead
                     return NewVar, DictValueMon
                 end
             end
@@ -110,7 +110,7 @@ function DetValMon(VarSet, DictValueMon, d, Ivec, Kvec, coeff)
             if (Ivec[index1] == Ivec[index3])
                 deleteat!(Kvec, index2)
                 deleteat!(Ivec, index2)
-                return DetValMon(VarSet, DictValueMon, d, Ivec, Kvec, coeff * (1 / Rational{BigInt}(d)))    #Replace X_ij X_kl X_ij by 1/d*X_ij
+                return DetValMon(VarSet, DictValueMon, d, Ivec, Kvec, coeff * (1 / Rational{Int}(d)))    #Replace X_ij X_kl X_ij by 1/d*X_ij
             end
         end
     end

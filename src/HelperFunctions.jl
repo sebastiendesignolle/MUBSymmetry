@@ -413,7 +413,7 @@ end
 function toString(value, fractionalDigits::Integer)
     # Source: https://www.mail-archive.com/julia-users@googlegroups.com/msg28174.html
     #
-    # Converts the (Rational{BigInt}/Basic) value into a bare string without scientific notation, displaying the
+    # Converts the (Rational{Int}/Basic) value into a bare string without scientific notation, displaying the
     # given amount of fractional digits and not more, but less if the precision leads to a negative digit.
     #
 
@@ -423,15 +423,15 @@ function toString(value, fractionalDigits::Integer)
         value *= -1
     end
 
-    intPart = BigInt(floor(value))
+    intPart = Int(floor(value))
     fractPart = value - intPart
 
     prevFractPart = 0
-    tenToKPlusOne = BigInt(10)
+    tenToKPlusOne = Int(10)
 
     result *= string(intPart) * "."
     for k in 0:fractionalDigits
-        newFractPart = BigInt(floor(fractPart * tenToKPlusOne))
+        newFractPart = Int(floor(fractPart * tenToKPlusOne))
         digit = Int((newFractPart - prevFractPart * 10) % 10)
 
         if digit < 0

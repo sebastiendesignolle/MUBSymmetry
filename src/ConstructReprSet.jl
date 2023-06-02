@@ -373,14 +373,14 @@ function RepresentativeSkElementPlusHalf(indexobject, t, useColumnStabilizer=tru
 end
 
 #Compute the inner product between two representative elements (as polynomials - linear combinations of words), and then collect terms using the Sk-symmetry
-function ReduceInnerProduct(ReprRow, ReprCol; option=false)
-    #if option==1, we do the t+1/2- version. The corresponding representative set elements must be given as input arguments!
-    #If option==0, we do the normal t-th level version. The corresponding representative set elements must be given as input arguments!
+function ReduceInnerProduct(ReprRow, ReprCol; half=false)
+    #if half==1, we do the t+1/2- version. The corresponding representative set elements must be given as input arguments!
+    #If half==0, we do the normal t-th level version. The corresponding representative set elements must be given as input arguments!
 
     #compute the inner product, this is costly!
     RowColDict = Dict()
     Entry = []
-    if option
+    if half
         for wordssign1 in ReprRow
             firstpartword = reverse(wordssign1[1])
             for wordssign2 in ReprCol
@@ -508,9 +508,9 @@ function TableauxTuples(composition, k, r)
 end
 
 #generate per block (indexed by underline{Lambda}) the possible rowindices given by (P,Q,tau,sigma)
-#option=1 corresponds to only the relevant (giving rise to nonzero rows) partitions assuming L=0 on the ideal Imub
-function GeneratePartitionsTableauxFull(d, k, t; option=true)
-    if option
+#half=1 corresponds to only the relevant (giving rise to nonzero rows) partitions assuming L=0 on the ideal Imub
+function GeneratePartitionsTableauxFull(d, k, t; half=true)
+    if half
         PWithQList = CreateRelevantPQiPartitionsV2(d, k, t)
     else
         PWithQList = CreatePQiPartitions(d, k, t)
@@ -651,9 +651,9 @@ function GeneratePartitionsTableauxFull(d, k, t; option=true)
 end
 
 #generate per block, indexed by a pair (underline{Lambda} (for Sd wr Sk-1), lambda (for Sd-1)), the possible rowindices given by (P,Q,tau,sigma)
-#option=1 corresponds to only the relevant (giving rise to nonzero rows) partitions assuming L=0 on the ideal Imub
-function GeneratePartitionsTableauxFullPlusHalf(d, k, t; option=true)
-    if option
+#half=1 corresponds to only the relevant (giving rise to nonzero rows) partitions assuming L=0 on the ideal Imub
+function GeneratePartitionsTableauxFullPlusHalf(d, k, t; half=true)
+    if half
         PWithQList = CreateRelevantPQiPartitionsV2(d, k, t + 1)
     else
         PWithQList = CreatePQiPartitions(d, k, t + 1)
