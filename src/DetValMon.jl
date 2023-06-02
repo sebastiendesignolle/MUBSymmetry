@@ -1,24 +1,19 @@
 function DetValMon(VarSet, DictValueMon, d, Ivec, Kvec, coeff)
-
     #Initialize
     NewVar = false
-
     #Reduce to the coset representative (lexicographically smallest element)
     Ivecnew, Kvecnew = minimumLexico(Ivec, Kvec)
-
     #If this monomial has previously been declared a variable...
     if (Ivec, Kvec) in VarSet
         DictValueMon[(Ivec, Kvec)] = 1 * coeff
         return NewVar, DictValueMon
     end
-
     #If the length of the monomial is 1, then its trace is 1
     lengthMonomial = length(Ivec)
     if (lengthMonomial == 1)
         DictValueMon[([-1], [-1])] = haskey(DictValueMon, ([-1], [-1])) ? DictValueMon[([-1], [-1])] + 1 * coeff : 1 * coeff
         return NewVar, DictValueMon
     end
-
     #If there is a basis which occurs twice subsequently: reduce using Projector/orthogonality-constraint
     for index1 in 1:lengthMonomial
         index2 = index1 - 1 != 0 ? index1 - 1 : lengthMonomial
@@ -33,7 +28,6 @@ function DetValMon(VarSet, DictValueMon, d, Ivec, Kvec, coeff)
             end
         end
     end
-
     #If there is a basis which occurs only once: reduce using POVM-constraint.
     for index in 1:lengthMonomial
         sameBasis = findall(x -> x == Kvec[index], Kvec)
@@ -43,7 +37,6 @@ function DetValMon(VarSet, DictValueMon, d, Ivec, Kvec, coeff)
             return DetValMon(VarSet, DictValueMon, d, Ivec, Kvec, coeff * (1 / Rational{Int}(d)))
         end
     end
-
     #Reduce a monomial recursively using POVM-constraint if there exists a basis in which one basis element occurs once
     for index1 in 1:lengthMonomial
         basis_considered = Kvec[index1]
@@ -57,7 +50,6 @@ function DetValMon(VarSet, DictValueMon, d, Ivec, Kvec, coeff)
                     Ivec_of_basis_single = push!(Ivec_of_basis_single, i)
                 end
             end
-
             if !isempty(Ivec_of_basis_single)
                 maximumI = maximum(Ivec_of_basis_single)
                 if (length(Ivec_occurring_unique) > 1 && Ivec[index1] == maximumI)
@@ -65,16 +57,15 @@ function DetValMon(VarSet, DictValueMon, d, Ivec, Kvec, coeff)
                     Ipart1 = deepcopy(Ivec)
                     deleteat!(Kpart1, index1)
                     deleteat!(Ipart1, index1)
-
                     #Identity:
                     NewVar, DictValueMon = DetValMon(
-                        VarSet,
-                        DictValueMon,
-                        d,
-                        Ipart1,
-                        Kpart1,
-                        coeff * (1 / Rational{Int}(d + 1 - length(Ivec_occurring_unique))),
-                    )
+                                                     VarSet,
+                                                     DictValueMon,
+                                                     d,
+                                                     Ipart1,
+                                                     Kpart1,
+                                                     coeff * (1 / Rational{Int}(d + 1 - length(Ivec_occurring_unique))),
+                                                    )
                     #Minus the others:
                     for basiselt in Ivec_occurring_unique
                         TempDictionary = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}()
@@ -84,13 +75,13 @@ function DetValMon(VarSet, DictValueMon, d, Ivec, Kvec, coeff)
                             Ivectemp[index1] = basiselt
                             # value_to_return -= DetermineValueMonomial(d,Ivectemp, Kvectemp);
                             VarSet, TempDictionary = DetValMon(
-                                VarSet,
-                                TempDictionary,
-                                d,
-                                Ivectemp,
-                                Kvectemp,
-                                -coeff * (1 / Rational{Int}(d + 1 - length(Ivec_occurring_unique))),
-                            )
+                                                               VarSet,
+                                                               TempDictionary,
+                                                               d,
+                                                               Ivectemp,
+                                                               Kvectemp,
+                                                               -coeff * (1 / Rational{Int}(d + 1 - length(Ivec_occurring_unique))),
+                                                              )
                             DictValueMon = merge(+, DictValueMon, TempDictionary)
                         end
                     end
@@ -101,7 +92,6 @@ function DetValMon(VarSet, DictValueMon, d, Ivec, Kvec, coeff)
             end
         end
     end
-
     #If monomial contains X_{index1,k} X_{index2,l} X{index1,k} for k neq l
     for index1 in 1:lengthMonomial
         index2 = index1 - 1 != 0 ? index1 - 1 : lengthMonomial #one index back
@@ -114,7 +104,6 @@ function DetValMon(VarSet, DictValueMon, d, Ivec, Kvec, coeff)
             end
         end
     end
-
     ##Now use commutator constraints to find the coset for which the coset representative is smallest
     Currentelement = (deepcopy(Kvecnew), deepcopy(Ivecnew))
     CurrentMonomial = []
@@ -134,11 +123,10 @@ function DetValMon(VarSet, DictValueMon, d, Ivec, Kvec, coeff)
                 push!(A, intermediateblock)
             end
             lastintermediateblock = vcat(
-                CurrentMonomial[indices_of_elementij[length(indices_of_elementij)]+1:end],
-                CurrentMonomial[1:indices_of_elementij[1]-1],
-            )
+                                         CurrentMonomial[indices_of_elementij[length(indices_of_elementij)]+1:end],
+                                         CurrentMonomial[1:indices_of_elementij[1]-1],
+                                        )
             push!(A, lastintermediateblock)
-
             for Ai1 in 1:length(A)
                 for Ai2 in 1:length(A)
                     if (Ai1 != Ai2)
@@ -158,12 +146,10 @@ function DetValMon(VarSet, DictValueMon, d, Ivec, Kvec, coeff)
                             tempI[testindex] = reducevector[testindex][1]
                             tempK[testindex] = reducevector[testindex][2]
                         end
-
                         reduceI, reduceK = minimumLexico(tempI, tempK)
                         if (isless((reduceK, reduceI), Currentelement))
                             Currentelement = (deepcopy(reduceK), deepcopy(reduceI))
                         end
-
                         if (A[Ai1][end] == A[Ai2][1]) ### IN THIS CASE WE CAN REDUCE TO LOWER DEGREE via the degree-3 MUB constraint
                             return DetValMon(VarSet, DictValueMon, d, reduceI, reduceK, coeff)
                         end
@@ -174,7 +160,6 @@ function DetValMon(VarSet, DictValueMon, d, Ivec, Kvec, coeff)
     end
     Ivecnew = Currentelement[2]
     Kvecnew = Currentelement[1]
-
     #We cannot reduce further: we add the monomial to the list of variables and assign it weight 1*coeff for the value dictionary
     DictValueMon[(Ivecnew, Kvecnew)] = 1 * coeff
     NewVar = true

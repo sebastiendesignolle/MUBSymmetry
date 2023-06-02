@@ -26,7 +26,6 @@ function ReducedMonomials(d, k, t, reduced=false)
         for Pi in P
             Kvec[Pi] .= piindex
             piindex += 1
-
             IvecPart = zeros(Int, size(Pi, 1))
             qiindex = 0
             for Qii in Q[piindex]
@@ -73,7 +72,6 @@ function ReducedMonomialsv2(d, k, t)
                 push!(Test, Qdef)
                 Qdef = Test
             end
-
             #Create Kvec and Ivec out of P,Qdef.
             Kvec = zeros(Int, t)
             Ivec = zeros(Int, t)
@@ -81,7 +79,6 @@ function ReducedMonomialsv2(d, k, t)
             for Pi in P
                 Kvec[Pi] .= piindex
                 piindex += 1
-
                 IvecPart = zeros(Int, size(Pi, 1))
                 qiindex = 0
                 for Qii in Qdef[piindex]
@@ -95,7 +92,6 @@ function ReducedMonomialsv2(d, k, t)
             index1 = 1
             while index1 < length(Ivec)    #if there is a basis which occurs twice subsequently: reduce using Projector-constraint
                 index2 = index1 + 1
-
                 if (Kvec[index1] == Kvec[index2] && Ivec[index1] != Ivec[index2])
                     givesZeroRow = true
                     break
@@ -107,7 +103,6 @@ function ReducedMonomialsv2(d, k, t)
                 end
                 index1 += 1
             end
-
             if (!givesZeroRow)
                 push!(MonomialsList, (Ivec, Kvec))
             end
@@ -171,30 +166,24 @@ function make_partition(J)  #returns lexicographically smallest element of S_n-o
     originalJ = deepcopy(J)
     n = length(J)
     toberenumbered = collect(1:n) #vector of all indices
-
     countrenumbered = 0
     newentry = 0
-
     while countrenumbered < n
         renumberthisloop = findall(x -> x == originalJ[toberenumbered[1]], originalJ)
         J[renumberthisloop] .= newentry
-
         countrenumbered += length(renumberthisloop)
         setdiff!(toberenumbered, renumberthisloop)
         newentry += 1
     end
-
     return J
 end
 
 #generate array of set partitions of [t] into at most r parts;
 function SetPartitionsAtMost(t, r)
     startset = collect(partitions(collect(1:t), 1))
-
     for j in 2:r
         startset = append!(startset, collect(partitions(collect(1:t), j)))
     end
-
     return startset
 end
 
@@ -241,7 +230,6 @@ function CreateRelevantPQiPartitions(d, k, t)
                 push!(Test, Qdef)
                 Qdef = Test
             end
-
             #Create Kvec and Ivec out of P,Qdef.
             Kvec = zeros(Int, t)
             Ivec = zeros(Int, t)
@@ -249,7 +237,6 @@ function CreateRelevantPQiPartitions(d, k, t)
             for Pi in P
                 Kvec[Pi] .= piindex
                 piindex += 1
-
                 IvecPart = zeros(Int, size(Pi, 1))
                 qiindex = 0
                 for Qii in Qdef[piindex]
@@ -262,12 +249,10 @@ function CreateRelevantPQiPartitions(d, k, t)
             givesZeroRow = false
             for index1 in 1:t-1    #if there is a basis which occurs twice subsequently: reduce using Projector-constraint
                 index2 = index1 + 1
-
                 if (Kvec[index1] == Kvec[index2] && Ivec[index1] != Ivec[index2])
                     givesZeroRow = true
                 end
             end
-
             if (!givesZeroRow)
                 Qdef = convert(Vector{Vector{Vector{Int8}}}, Qdef)
                 push!(PWithQList, (P, Qdef))
@@ -296,7 +281,6 @@ function CreateRelevantPQiPartitionsV2(d, k, t)
                 push!(Test, Qdef)
                 Qdef = Test
             end
-
             #Create Kvec and Ivec out of P,Qdef.
             Kvec = zeros(Int, t)
             Ivec = zeros(Int, t)
@@ -304,7 +288,6 @@ function CreateRelevantPQiPartitionsV2(d, k, t)
             for Pi in P
                 Kvec[Pi] .= piindex
                 piindex += 1
-
                 IvecPart = zeros(Int, size(Pi, 1))
                 qiindex = 0
                 for Qii in Qdef[piindex]
@@ -334,10 +317,8 @@ function CreateRelevantPQiPartitionsV2(d, k, t)
                 end
                 index1 += 1
             end
-
             Ivec = renumberIdependingOnK(Ivec, Kvec)
             Kvec = make_partition(Kvec)
-
             if (!givesZeroRow)
                 Qdef = convert(Vector{Vector{Vector{Int8}}}, Qdef)
                 WordDict[(Ivec, Kvec)] = (P, Qdef)
@@ -416,33 +397,26 @@ function toString(value, fractionalDigits::Integer)
     # Converts the (Rational{Int}/Basic) value into a bare string without scientific notation, displaying the
     # given amount of fractional digits and not more, but less if the precision leads to a negative digit.
     #
-
     result = ""
     if value < 0
         result = "-"
         value *= -1
     end
-
     intPart = Int(floor(value))
     fractPart = value - intPart
-
     prevFractPart = 0
     tenToKPlusOne = Int(10)
-
     result *= string(intPart) * "."
     for k in 0:fractionalDigits
         newFractPart = Int(floor(fractPart * tenToKPlusOne))
         digit = Int((newFractPart - prevFractPart * 10) % 10)
-
         if digit < 0
             # happens sometimes if the precision is reached, so it doesn't make sense to analyze it further
             break
         end
-
         result *= string(digit)
         prevFractPart = newFractPart
         tenToKPlusOne *= 10
     end
-
     return result
 end
