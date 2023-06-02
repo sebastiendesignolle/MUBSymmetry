@@ -6,7 +6,6 @@ using Combinatorics
 using DoubleFloats
 using Printf
 
-setprecision(128)
 include("ConstructReprSet.jl")
 include("DetValMon.jl")
 include("HelperFunctions.jl")
@@ -65,11 +64,7 @@ function MUBWriteSDPASk(d, k, t;
                 if (colidx >= rowidx)
                     #compute the inner product.
                     Block[rowidx, colidx] = Dict{Tuple{Vector{Int}, Vector{Int}}, Double64}()
-                    if option
-                        InnerProduct = ReduceInnerProduct(reprRowElement, reprColElement; option=true)
-                    else
-                        InnerProduct = ReduceInnerProduct(reprRowElement, reprColElement; option=false)
-                    end
+                    InnerProduct = ReduceInnerProduct(reprRowElement, reprColElement; option=option)
                     for wordssignK in InnerProduct
                         tempmonoomK = wordssignK[1]
                         if !haskey(MonomialValuesDictionary, tempmonoomK)
@@ -101,16 +96,11 @@ function MUBWriteSDPASk(d, k, t;
     ##Now checking MUB-constraints
     ##for (d, k, t)=(7, 6, 4): normal inner products 150 sec (using the new inner product version exploiting tracial property/optimizations)
     ListMissing = Dict{Tuple{Vector{Int}, Vector{Int}}, Double64}[]
-    time += @elapsed if option
+    time += @elapsed begin
         println("Checking Projector and Orthogonality constraints...")
-        @time append!(ListMissing, CheckImubProjectorOrthogonalitySk(d, k, t; option=true))
+        @time append!(ListMissing, CheckImubProjectorOrthogonalitySk(d, k, t; option=option))
         println("Checking MUB constraints...")
-        @time append!(ListMissing, CheckImubMUBSk(d, k, t; option=true))
-    else
-        println("Checking Projector and Orthogonality constraints...")
-        @time append!(ListMissing, CheckImubProjectorOrthogonalitySk(d, k, t))
-        println("Checking MUB constraints...")
-        @time append!(ListMissing, CheckImubMUBSk(d, k, t))
+        @time append!(ListMissing, CheckImubMUBSk(d, k, t; option=option))
     end
     println("Checking Commutator Constraints...")
     time += @elapsed append!(ListMissing, CheckImubCommutatorsSk(d, k, t; option=option))
