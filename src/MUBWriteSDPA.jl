@@ -1,10 +1,9 @@
-using LinearAlgebra
-using RowEchelon
-using GenericLinearAlgebra
 using AbstractAlgebra
 using Combinatorics
-using DoubleFloats
+using GenericLinearAlgebra
+using LinearAlgebra
 using Printf
+using RowEchelon
 
 include("ConstructReprSet.jl")
 include("DetValMon.jl")
