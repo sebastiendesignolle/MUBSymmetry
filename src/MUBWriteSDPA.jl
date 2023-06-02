@@ -14,7 +14,7 @@ include("HelperFunctions.jl")
 #WRITES SEPARATE BLOCKS FOR I=1-part of t-th level of MOMENT MATRIX, USING THE SYMMETRY REDUCTION!
 function MUBWriteSDPASk(d, k, t;
         option=false,
-        manual_epsilon=0.0000000000000001,  #if smaller than this epsilon, consider coefficient to be zero.
+        manual_epsilon=1e-16,  #if smaller than this epsilon, consider coefficient to be zero.
     )
     MonomialValuesDictionary = Dict()
     VarSet = Set{Tuple{Vector{Int}, Vector{Int}}}()
@@ -98,8 +98,8 @@ function MUBWriteSDPASk(d, k, t;
     [push!(VarSetOrdered, x) for x in VarSet]
 
     println("Checking for additional constraints...")
-    ##Now checking MUB-constraints 
-    ##for (d, k, t)=(7, 6, 4): normal inner products 150 sec (using the new inner product version exploiting tracial property/optimizations) 
+    ##Now checking MUB-constraints
+    ##for (d, k, t)=(7, 6, 4): normal inner products 150 sec (using the new inner product version exploiting tracial property/optimizations)
     ListMissing = Dict{Tuple{Vector{Int}, Vector{Int}}, Double64}[]
     time += @elapsed if option
         println("Checking Projector and Orthogonality constraints...")
@@ -178,12 +178,12 @@ function MUBWriteSDPASk(d, k, t;
         println(io, 0, " ", blocknumber + 1, " ", 1, " ", 1, " ", -1)
     end
 
-    #now print the additional linear constraints 
+    #now print the additional linear constraints
     for i in 1:numberOfAdditionalConstraints
         constraint = newConstraints[i]
         blocknumber = 2 * nVars + 2 * (i - 1) + 1
         coefficientZero = get(constraint, ([-1], [-1]), 0)
-        ## write constraint that linearexpression >=0 
+        ## write constraint that linearexpression >=0
         println(io, 0, " ", blocknumber, " ", 1, " ", 1, " ", -1 * coefficientZero)
         for varnumber in 1:nVars
             coefficient = get(constraint, VarSetOrdered[varnumber], 0)
@@ -282,7 +282,7 @@ end
 #WRITES SEPARATE BLOCKS FOR FULL t-th level of MOMENT MATRIX, USING THE FULL SYMMETRY REDUCTION OF THE WREATH PRODUCT GROUP S_d wr S_k
 function MUBWriteSDPA(d, k, t;
         option=false,
-        manual_epsilon=0.0000000000000001,  #if smaller than this epsilon, consider coefficient to be zero.
+        manual_epsilon=1e-16,  #if smaller than this epsilon, consider coefficient to be zero.
     )
 
     if option
@@ -383,8 +383,8 @@ function MUBWriteSDPA(d, k, t;
     [push!(VarSetOrdered, x) for x in VarSet]
 
     println("Checking for additional constraints...")
-    ##Now checking MUB-constraints 
-    ##for (d, k, t)=(7, 6, 4): normal inner products 150 sec (using the new inner product version exploiting tracial property/optimizations) 
+    ##Now checking MUB-constraints
+    ##for (d, k, t)=(7, 6, 4): normal inner products 150 sec (using the new inner product version exploiting tracial property/optimizations)
     ListMissing = Dict{Tuple{Vector{Int}, Vector{Int}}, Double64}[]
     time += @elapsed if option
         println("Checking Projector and Orthogonality constraints...")
@@ -466,12 +466,12 @@ function MUBWriteSDPA(d, k, t;
         println(io, 0, " ", blocknumber + 1, " ", 1, " ", 1, " ", -1)
     end
 
-    #now print the additional linear constraints 
+    #now print the additional linear constraints
     for i in 1:numberOfAdditionalConstraints
         constraint = newConstraints[i]
         blocknumber = 2 * nVars + 2 * (i - 1) + 1
         coefficientZero = get(constraint, ([-1], [-1]), 0)
-        ## write constraint that linearexpression >=0 
+        ## write constraint that linearexpression >=0
         println(io, 0, " ", blocknumber, " ", 1, " ", 1, " ", -1 * coefficientZero)
         for varnumber in 1:nVars
             coefficient = get(constraint, VarSetOrdered[varnumber], 0)
@@ -586,13 +586,13 @@ function MUBWriteSDPA(d, k, t;
     println("##### Writing finished.")
 end
 
-##TEMPORARY FUNCTION TO WRITE d=6, k=7, t=5.5 BUT WITH THE 31 ADDITIONAL LINEAR COMMUTATOR-CONSTRAINTS COMING FROM MONOMIALS OF LENGTH 12 AND INVOLVING ONLY MONOMIALS OF LENGTH 11 
+##TEMPORARY FUNCTION TO WRITE d=6, k=7, t=5.5 BUT WITH THE 31 ADDITIONAL LINEAR COMMUTATOR-CONSTRAINTS COMING FROM MONOMIALS OF LENGTH 12 AND INVOLVING ONLY MONOMIALS OF LENGTH 11
 function MUBWriteSDPATEMP()
     d = 6
     k = 7
     t = 5
     option = true
-    manual_epsilon = 0.0000000000000001  #if smaller than this epsilon, consider coefficient to be zero.
+    manual_epsilon = 1e-16  #if smaller than this epsilon, consider coefficient to be zero.
 
     if option
         println("#### FULL SYMMETRY, CASE: d, k, t = ", d, " ", k, " ", t, "+1/2.")
@@ -693,8 +693,8 @@ function MUBWriteSDPATEMP()
     [push!(VarSetOrdered, x) for x in VarSet]
 
     println("Checking for additional constraints...")
-    ##Now checking MUB-constraints 
-    ##for (d, k, t)=(7, 6, 4): normal inner products 150 sec (using the new inner product version exploiting tracial property/optimizations) 
+    ##Now checking MUB-constraints
+    ##for (d, k, t)=(7, 6, 4): normal inner products 150 sec (using the new inner product version exploiting tracial property/optimizations)
 
     nVars = length(VarSet)
     println("##### List of variables: ", VarSetOrdered)
@@ -859,12 +859,12 @@ function MUBWriteSDPATEMP()
         println(io, 0, " ", blocknumber + 1, " ", 1, " ", 1, " ", -1)
     end
 
-    #now print the additional linear constraints 
+    #now print the additional linear constraints
     for i in 1:numberOfAdditionalConstraints
         constraint = newConstraints[i]
         blocknumber = 2 * nVars + 2 * (i - 1) + 1
         coefficientZero = get(constraint, ([-1], [-1]), 0)
-        ## write constraint that linearexpression >=0 
+        ## write constraint that linearexpression >=0
         println(io, 0, " ", blocknumber, " ", 1, " ", 1, " ", -1 * coefficientZero)
         for varnumber in 1:nVars
             coefficient = get(constraint, VarSetOrdered[varnumber], 0)
@@ -980,7 +980,7 @@ function MUBWriteSDPATEMP()
 end
 
 #check projector constraint on homogeneous polynomials of degree 2t-2
-#option 1 is level +half, so check for polynomials of degree 2t-1 
+#option 1 is level +half, so check for polynomials of degree 2t-1
 function CheckImubProjectorOrthogonality(d, k, t; option=false)
     ListOfReducedMonomials = ReducedMonomials(d, k, 2 * t - 2 + option)
     VarSet = Set{Tuple{Vector{Int}, Vector{Int}}}()
@@ -1020,7 +1020,7 @@ function CheckImubProjectorOrthogonality(d, k, t; option=false)
 end
 
 #check MUB-constraint on homogeneous polynomials of degree 2t-3
-#option 1 is level +half, so check for polynomials of degree 2t-2 
+#option 1 is level +half, so check for polynomials of degree 2t-2
 function CheckImubMUBSimple(d, k, t; option=false)
     ListOfReducedMonomials = ReducedMonomialsv2(d, k, 2 * t - 3 + option)
     VarSet = Set{Tuple{Vector{Int}, Vector{Int}}}()
@@ -1172,7 +1172,7 @@ function RemoveLinearDependentConstraints(ListMissing, VarSetOrdered)
     return nonZeroDictList
 end
 
-##Check the commutator constraint on monomials 
+##Check the commutator constraint on monomials
 function CheckImubCommutators(degu, degv, d, k, degt)
     wordsU = degu >= degt ? ReducedMonomials(d, k, degu + 1) : GenMonNC(d, k, degu)
     wordsV = GenMonNC(d, k, degv)
@@ -1235,7 +1235,7 @@ function CheckImubCommutators(degu, degv, d, k, degt)
     return unique(ListMissing)
 end
 
-##Check the commutator constraint on monomials 
+##Check the commutator constraint on monomials
 ##option 0 = normal t-th level
 ##option 1 = level t+1/2.
 function CheckImubCommutatorsV2(d, k, t; option=false)
@@ -1288,7 +1288,7 @@ function CheckImubCommutatorsV2(d, k, t; option=false)
     end
 end
 #VarSetOrdered = [x for x in VarSet]
-return unique(ListMissing) #RemoveLinearDependentConstraints(unique(ListMissing), VarSetOrdered) 
+return unique(ListMissing) #RemoveLinearDependentConstraints(unique(ListMissing), VarSetOrdered)
 end
 
 ##Counts variables
@@ -1310,7 +1310,7 @@ end
 #------------Checks for Sk-----------------
 
 #check projector constraint on homogeneous polynomials of degree 2t-2, ONLY I=1, 1, 1, 1, 1=part ("Sk"-part)
-#option 1 is level +half, so check for polynomials of degree 2t-1 
+#option 1 is level +half, so check for polynomials of degree 2t-1
 function CheckImubProjectorOrthogonalitySk(d, k, t; option=false)
 ListOfMonomials = MonomialsSk(k, 2 * t - 2 + option)
 VarSet = Set{Tuple{Vector{Int}, Vector{Int}}}()
@@ -1337,36 +1337,36 @@ return RemoveLinearDependentConstraints(unique(ListMissing), VarSetOrdered)
 end
 
 #check MUB-constraint on homogeneous polynomials of degree 2t-3, ONLY I=1, 1, 1, 1, 1=part ("Sk"-part)
-#option 1 is level +half, so check for polynomials of degree 2t-2 
+#option 1 is level +half, so check for polynomials of degree 2t-2
 function CheckImubMUBSk(d, k, t; option=false)
-ListOfMonomials = MonomialsSk(k, 2 * t - 3 + option)   ### BE CAREFUL, CAN BE REDUCED STILL (make "REDUCEDMonomialsSK in which projector-constraint is used.)
-VarSet = Set{Tuple{Vector{Int}, Vector{Int}}}()
-ListMissing = Dict{Tuple{Vector{Int}, Vector{Int}}, Double64}[]
-for monomial in ListOfMonomials
-    Ivec = zeros(Int, size(monomial, 1))
-    Kvec = monomial
-    for j in 1:k
-        tempIvec = push!(deepcopy(Ivec), 0)
-        tempKvec = push!(deepcopy(Kvec), j - 1)
-        NewVar, Dict1 =
+    ListOfMonomials = MonomialsSk(k, 2 * t - 3 + option)   ### BE CAREFUL, CAN BE REDUCED STILL (make "REDUCEDMonomialsSK in which projector-constraint is used.)
+    VarSet = Set{Tuple{Vector{Int}, Vector{Int}}}()
+    ListMissing = Dict{Tuple{Vector{Int}, Vector{Int}}, Double64}[]
+    for monomial in ListOfMonomials
+        Ivec = zeros(Int, size(monomial, 1))
+        Kvec = monomial
+        for j in 1:k
+            tempIvec = push!(deepcopy(Ivec), 0)
+            tempKvec = push!(deepcopy(Kvec), j - 1)
+            NewVar, Dict1 =
             DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Double64}(), d, tempIvec, tempKvec, Double64(1 / d))
-        for j2 in 1:k
-            if j2 != j
-                tempIvec2 = push!(deepcopy(Ivec), 0, 0, 0)
-                tempKvec2 = push!(deepcopy(Kvec), j - 1, j2 - 1, j - 1)
-                NewVar, Dict2 =
+            for j2 in 1:k
+                if j2 != j
+                    tempIvec2 = push!(deepcopy(Ivec), 0, 0, 0)
+                    tempKvec2 = push!(deepcopy(Kvec), j - 1, j2 - 1, j - 1)
+                    NewVar, Dict2 =
                     DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Double64}(), d, tempIvec2, tempKvec2, -1)
-                testValue = merge(+, Dict1, Dict2)
-                if !checkValue(testValue)
-                    AddVariable(VarSet, testValue)
-                    push!(ListMissing, testValue)
+                    testValue = merge(+, Dict1, Dict2)
+                    if !checkValue(testValue)
+                        AddVariable(VarSet, testValue)
+                        push!(ListMissing, testValue)
+                    end
                 end
             end
         end
     end
-end
-VarSetOrdered = [x for x in VarSet]
-return RemoveLinearDependentConstraints(unique(ListMissing), VarSetOrdered)
+    VarSetOrdered = [x for x in VarSet]
+    return RemoveLinearDependentConstraints(unique(ListMissing), VarSetOrdered)
 end
 
 ##Check the commutator constraint on monomials, ONLY I=1, 1, 1, 1, 1=part ("Sk"-part)
