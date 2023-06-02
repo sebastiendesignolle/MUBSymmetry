@@ -92,12 +92,12 @@ function MUBWriteSDPASk(d::Int, k::Int, t::Int;
     ##for (d, k, t)=(7, 6, 4): normal inner products 150 sec (using the new inner product version exploiting tracial property/optimizations)
     ListMissing = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}[]
     time += @elapsed begin
-        println("Checking Projector and Orthogonality constraints...")
+        println("Checking projector and orthogonality constraints...")
         @time append!(ListMissing, CheckImubProjectorOrthogonalitySk(d, k, t; half=half))
         println("Checking MUB constraints...")
         @time append!(ListMissing, CheckImubMUBSk(d, k, t; half=half))
     end
-    println("Checking Commutator Constraints...")
+    println("Checking commutator constraints...")
     time += @elapsed append!(ListMissing, CheckImubCommutatorsSk(d, k, t; half=half))
     nVars = length(VarSet)
     println("##### List of variables: ", VarSetOrdered)
@@ -342,22 +342,15 @@ function MUBWriteSDPA(d::Int, k::Int, t::Int;
     ##Now checking MUB-constraints
     ##for (d, k, t)=(7, 6, 4): normal inner products 150 sec (using the new inner product version exploiting tracial property/optimizations)
     ListMissing = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{Int}}[]
-    time += @elapsed if half
-        println("Checking Projector and Orthogonality constraints...")
-        @time append!(ListMissing, CheckImubProjectorOrthogonality(d, k, t; half=true))
+    time += @elapsed begin
+        println("Checking projector and orthogonality constraints...")
+        @time append!(ListMissing, CheckImubProjectorOrthogonality(d, k, t; half=half))
         println("Checking POVM constraints...")
-        @time append!(ListMissing, CheckImubPOVMSimple(d, k, t; half=true))
+        @time append!(ListMissing, CheckImubPOVMSimple(d, k, t; half=half))
         println("Checking MUB constraints...")
-        @time append!(ListMissing, CheckImubMUBSimple(d, k, t; half=true))
-    else
-        println("Checking Projector and Orthogonality constraints...")
-        @time append!(ListMissing, CheckImubProjectorOrthogonality(d, k, t))
-        println("Checking POVM constraints...")
-        @time append!(ListMissing, CheckImubPOVMSimple(d, k, t))
-        println("Checking MUB constraints...")
-        @time append!(ListMissing, CheckImubMUBSimple(d, k, t))
+        @time append!(ListMissing, CheckImubMUBSimple(d, k, t; half=half))
     end
-    println("Checking Commutator Constraints...")
+    println("Checking commutator constraints...")
     time += @elapsed append!(ListMissing, CheckImubCommutatorsV2(d, k, t; half=half))
     nVars = length(VarSet)
     println("##### List of variables: ", VarSetOrdered)
