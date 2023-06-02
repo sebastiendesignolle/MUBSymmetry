@@ -66,9 +66,9 @@ function MUBWriteSDPASk(d, k, t;
                     #compute the inner product.
                     Block[rowidx, colidx] = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}()
                     if option
-                        InnerProduct = ReduceInnerProduct(reprRowElement, reprColElement, 1)
+                        InnerProduct = ReduceInnerProduct(reprRowElement, reprColElement; option=true)
                     else
-                        InnerProduct = ReduceInnerProduct(reprRowElement, reprColElement, 0)
+                        InnerProduct = ReduceInnerProduct(reprRowElement, reprColElement; option=false)
                     end
                     for wordssignK in InnerProduct
                         tempmonoomK = wordssignK[1]
@@ -103,9 +103,9 @@ function MUBWriteSDPASk(d, k, t;
     ListMissing = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}[]
     time += @elapsed if option
         println("Checking Projector and Orthogonality constraints...")
-        @time append!(ListMissing, CheckImubProjectorOrthogonalitySk(d, k, t, 1))
+        @time append!(ListMissing, CheckImubProjectorOrthogonalitySk(d, k, t; option=true))
         println("Checking MUB constraints...")
-        @time append!(ListMissing, CheckImubMUBSk(d, k, t, 1))
+        @time append!(ListMissing, CheckImubMUBSk(d, k, t; option=true))
     else
         println("Checking Projector and Orthogonality constraints...")
         @time append!(ListMissing, CheckImubProjectorOrthogonalitySk(d, k, t))
@@ -388,11 +388,11 @@ function MUBWriteSDPA(d, k, t;
     ListMissing = Dict{Tuple{Vector{Int}, Vector{Int}}, Rational{BigInt}}[]
     time += @elapsed if option
         println("Checking Projector and Orthogonality constraints...")
-        @time append!(ListMissing, CheckImubProjectorOrthogonality(d, k, t, 1))
+        @time append!(ListMissing, CheckImubProjectorOrthogonality(d, k, t; option=true))
         println("Checking POVM constraints...")
-        @time append!(ListMissing, CheckImubPOVMSimple(d, k, t, 1))
+        @time append!(ListMissing, CheckImubPOVMSimple(d, k, t; option=true))
         println("Checking MUB constraints...")
-        @time append!(ListMissing, CheckImubMUBSimple(d, k, t, 1))
+        @time append!(ListMissing, CheckImubMUBSimple(d, k, t; option=true))
     else
         println("Checking Projector and Orthogonality constraints...")
         @time append!(ListMissing, CheckImubProjectorOrthogonality(d, k, t))
