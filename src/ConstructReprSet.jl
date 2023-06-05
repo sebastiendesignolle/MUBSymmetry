@@ -988,11 +988,12 @@ end
 
 # Compute the inner product more efficiently taking into account the ideal Imub.
 function ReduceInnerProductUsingImub(ReprRow, ReprCol)
-    #we do the normal t-th level version. The corresponding representative set elements must be given as input arguments!
-    #compute the inner product, this is costly!
+    # we do the normal t-th level version.
+    # The corresponding representative set elements must be given as input arguments!
+    # compute the inner product, this is costly!
     RowColKDict = Dict{Vector{Int8}, Int128}()
     EntryDict = Dict{Tuple{Vector{Int8}, Vector{Int8}}, Int128}()
-    #FIRST WITHOUT REVERSING
+    # FIRST WITHOUT REVERSING
     ReprKRow = ReprRow[1]
     ReprDRow = ReprRow[2]
     Prow = ReprRow[3]
@@ -1001,8 +1002,8 @@ function ReduceInnerProductUsingImub(ReprRow, ReprCol)
     ReprDCol = ReprCol[2]
     Pcol = ReprCol[3]
     Qcol = ReprCol[4]
-    t = size(ReprKRow[1][1], 1)  # gives length of monomial in repr element, is t for level t, and t+1 for level t+0.5.
-    ##reduce K inner product
+    t = size(ReprKRow[1][1], 1) # gives length of monomial in repr element, is t for level t, and t+1 for level t+0.5.
+    # reduce K inner product
     for wordssign1 in ReprKRow
         firstpartword = wordssign1[1]
         for wordssign2 in ReprKCol
@@ -1014,7 +1015,7 @@ function ReduceInnerProductUsingImub(ReprRow, ReprCol)
             end
         end
     end
-    ##For all k inner products, reduce d inner product depending on k inner product
+    # For all k inner products, reduce d inner product depending on k inner product
     for (tempmonoomK, valueK) in RowColKDict
         ProductDArray = Tuple{Vector{Int8}, Int128}[(zeros(Int8, 2 * t), 1)]
         # println("NIEUW K-MONOOM")
@@ -1028,7 +1029,7 @@ function ReduceInnerProductUsingImub(ReprRow, ReprCol)
         end
         for i in unique(tempmonoomK)
             currentKpart = findall(x -> x == i, tempmonoomK)
-            ## the set of indices for which x==i is a combination of P[i1] and/or t+P'[i2]. First find the corresponding i1, i2 or both.
+            # the set of indices for which x==i is a combination of P[i1] and/or t+P'[i2]. First find the corresponding i1, i2 or both.
             IndexSet = [0, 0]
             for i1 in 1:size(Prow, 1)
                 if Prow[i1][1] in currentKpart
@@ -1040,7 +1041,7 @@ function ReduceInnerProductUsingImub(ReprRow, ReprCol)
                     IndexSet[2] = i2
                 end
             end
-            #compute D-innerproduct for this part
+            # compute D-innerproduct for this part
             DpartInnerProduct = Dict{Vector{Int8}, Int128}()
             empty(DpartInnerProduct)
             if IndexSet[1] != 0 && IndexSet[2] != 0
@@ -1063,7 +1064,7 @@ function ReduceInnerProductUsingImub(ReprRow, ReprCol)
                     end
                 end
             else
-                #determine which of the indexsets is nonzero and take relevant repr set part
+                # determine which of the indexsets is nonzero and take relevant repr set part
                 RelevantReprSetPart = IndexSet[1] != 0 ? ReprDRow[IndexSet[1]] : ReprDCol[IndexSet[2]]
                 for wordssign1 in RelevantReprSetPart
                     temppartmonoomDim = make_partition(deepcopy(wordssign1[1]))
@@ -1076,31 +1077,33 @@ function ReduceInnerProductUsingImub(ReprRow, ReprCol)
             end
             NewProductDArray = Tuple{Vector{Int8}, Int128}[]
             for wordssign in ProductDArray
+                println(wordssign)
+                error("debug")
                 for (dword, signd) in DpartInnerProduct
-                    # println("dword ",dword)
+                    # println("dword ", dword)
                     # println("Kpart", currentKpart)
                     newword = deepcopy(wordssign[1])
-                    # println("newword ",newword)
+                    # println("newword ", newword)
                     newword[currentKpart] .= dword
-                    # println("newword after modification ",newword)
+                    # println("newword after modification ", newword)
                     push!(NewProductDArray, (newword, signd * wordssign[2]))
                 end
             end
             ProductDArray = NewProductDArray
             # println(ProductDArray)
         end
-        #reverse first part
+        # reverse first part
         tempmonoomK[1:t] = tempmonoomK[t:-1:1]
         for wordssign in ProductDArray
             tempmonoomDim = wordssign[1]
-            #reverse
+            # reverse
             tempmonoomDim[1:t] = tempmonoomDim[t:-1:1]
-            ##add check
+            # add check
             givesZeroElement = false
-            # if tempmonoomK[t]==tempmonoomK[t+1] && tempmonoomDim[t] != tempmonoomDim[t+1]
-            #     givesZeroElement=true;
-            # elseif tempmonoomK[2*t]==tempmonoomK[1] && tempmonoomDim[2*t] != tempmonoomDim[1]
-            #     givesZeroElement=true;
+            # if tempmonoomK[t] == tempmonoomK[t+1] && tempmonoomDim[t] != tempmonoomDim[t+1]
+            #     givesZeroElement = true
+            # elseif tempmonoomK[2*t] == tempmonoomK[1] && tempmonoomDim[2*t] != tempmonoomDim[1]
+            #     givesZeroElement = true
             # end
             if !givesZeroElement
                 if !haskey(EntryDict, (tempmonoomDim, tempmonoomK))
