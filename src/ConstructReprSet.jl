@@ -29,7 +29,7 @@ function IsSemiStandard(Y)
     #check rows
     for i in 1:size(rowpartition, 1)
         for j in 1:(rowpartition[i]-1)
-            if (Y[i, j] > Y[i, j+1])
+            if Y[i, j] > Y[i, j+1]
                 return false
             end
         end
@@ -37,7 +37,7 @@ function IsSemiStandard(Y)
     #check cols
     for i in 1:size(colpartition, 1)
         for j in 1:(colpartition[i]-1)
-            if (Y[j, i] >= Y[j+1, i])
+            if Y[j, i] >= Y[j+1, i]
                 return false
             end
         end
@@ -151,10 +151,10 @@ function generatePartitionsTableaux(k, t, reduced=true)
             while index1 < length(Kvec)    #if there is a basis which occurs twice subsequently: reduce using Projector-constraint
                 index2 = index1 + 1
                 index3 = index1 + 2
-                if (Kvec[index1] == Kvec[index2])
+                if Kvec[index1] == Kvec[index2]
                     deleteat!(Kvec, index1)
                     index1 -= 1
-                elseif (index3 <= length(Kvec) && Kvec[index1] == Kvec[index3]) ##reduce X_{index1,k} X_{index2,l} X{index1,k} 
+                elseif index3 <= length(Kvec) && Kvec[index1] == Kvec[index3] ##reduce X_{index1,k} X_{index2,l} X{index1,k} 
                     deleteat!(Kvec, index2)
                     index1 -= 1
                 end
@@ -182,7 +182,7 @@ function generatePartitionsTableaux(k, t, reduced=true)
             candidates = AllCandidateVectors(k, r)
             for candidate in candidates
                 fill!(Ystart, candidate)
-                if (IsSemiStandard(Ystart))
+                if IsSemiStandard(Ystart)
                     #push a deepcopy so that we push the correct filling and do not change it afterwards.
                     GoodTableauxPartitions = push!(GoodTableauxPartitions, (deepcopy(Ystart), setpart))
                 end
@@ -222,10 +222,10 @@ function generatePartitionsTableauxPlusHalf(k, t, reduced=true)
             while index1 < length(Kvec)    #if there is a basis which occurs twice subsequently: reduce using Projector-constraint
                 index2 = index1 + 1
                 index3 = index1 + 2
-                if (Kvec[index1] == Kvec[index2])
+                if Kvec[index1] == Kvec[index2]
                     deleteat!(Kvec, index1)
                     index1 -= 1
-                elseif (index3 <= length(Kvec) && Kvec[index1] == Kvec[index3]) ##reduce X_{index1,k} X_{index2,l} X{index1,k} 
+                elseif index3 <= length(Kvec) && Kvec[index1] == Kvec[index3] ##reduce X_{index1,k} X_{index2,l} X{index1,k} 
                     deleteat!(Kvec, index2)
                     index1 -= 1
                 end
@@ -251,7 +251,7 @@ function generatePartitionsTableauxPlusHalf(k, t, reduced=true)
             candidates = AllCandidateVectors(k, r)
             for candidate in candidates
                 fill!(Ystart, candidate)
-                if (IsSemiStandard(Ystart))
+                if IsSemiStandard(Ystart)
                     #push a deepcopy so that we push the correct filling and do not change it afterwards.
                     GoodTableauxPartitions = push!(GoodTableauxPartitions, (deepcopy(Ystart), setpart))
                     blockSize += 1
@@ -394,7 +394,7 @@ end
 # if you apply it iteratively, it returns tuples of tuples like (x,(y,(w,z))). The function flatten from above transforms this into the array [x,y,w,z].
 function productQ(Qfirst, Qj)
     outputQ = []
-    if (isempty(Qfirst))
+    if isempty(Qfirst)
         return Qj
     end
     outputQ = collect(Base.product(Qfirst, Qj))
@@ -416,7 +416,7 @@ function CreateSemiStandardTableauxsizedmur(d, r)
         Ystart = YoungTableau(lambda)
         for candidate in candidates
             fill!(Ystart, candidate)
-            if (IsSemiStandard(Ystart))
+            if IsSemiStandard(Ystart)
                 #push a deepcopy so that we push the correct filling and do not change it afterwards.
                 GoodTableauxPartitions = push!(GoodTableauxPartitions, deepcopy(Ystart))
             end
@@ -434,7 +434,7 @@ function CreateSemiStandardTableauxsizedmurForShape(d, r, lambda)
     Ystart = YoungTableau(lambda)
     for candidate in candidates
         fill!(Ystart, candidate)
-        if (IsSemiStandard(Ystart))
+        if IsSemiStandard(Ystart)
             #push a deepcopy so that we push the correct filling and do not change it afterwards.
             GoodTableauxPartitions = push!(GoodTableauxPartitions, deepcopy(Ystart))
         end
@@ -458,7 +458,7 @@ function TableauxTuples(composition, k, r)
     for TabProd in TableauxTuples
         TabProdDef = flatten(TabProd)
         #only push shapes with at least k-r in the first row of the first tableau (or empty first tableau if k0=0)
-        if (size(TabProdDef[1], 1) == 0 || TabProdDef[1][1] >= k - r)
+        if size(TabProdDef[1], 1) == 0 || TabProdDef[1][1] >= k - r
             push!(TTuplesFinal, TabProdDef)
         end
     end
@@ -516,7 +516,7 @@ function GeneratePartitionsTableauxFull(d, k, t; option=true)
                             Ytab = ki > 0 ? YoungTableau(convert(Array{Int64, 1}, tableauxTuple[tupleindex])) : []
                             if ki > 0
                                 fill!(Ytab, fillkivector)
-                                if (ki > 0 && !IsSemiStandard(Ytab))
+                                if ki > 0 && !IsSemiStandard(Ytab)
                                     kantoevoegen = false
                                 end
                             end
@@ -547,7 +547,7 @@ function GeneratePartitionsTableauxFull(d, k, t; option=true)
                                 newSSYTS = CreateSemiStandardTableauxsizedmurForShape(d, Qisize, shape)  #NEW: QIsize
                                 newsize = isempty(newSSYTS) ? 0 : newsize * length(newSSYTS)
                                 if newsize >= 1
-                                    if (!isempty(allowedSSYTSD) && !isempty(newSSYTS))
+                                    if !isempty(allowedSSYTSD) && !isempty(newSSYTS)
                                         productofmorethanonetableau = true
                                     end
                                     allowedSSYTSD = productQ(allowedSSYTSD, newSSYTS)
@@ -565,7 +565,7 @@ function GeneratePartitionsTableauxFull(d, k, t; option=true)
                                 end
                             end
                             allowedSSYTSD = Test
-                            if (!haskey(MapFinalBlockDiagLambda, tableauxTuple))
+                            if !haskey(MapFinalBlockDiagLambda, tableauxTuple)
                                 MapFinalBlockDiagLambda[tableauxTuple] = []
                             end
                             for test in 1:newsize
@@ -582,7 +582,7 @@ function GeneratePartitionsTableauxFull(d, k, t; option=true)
     maxblokgrootte = 0
     for (key, value) in MapFinalBlockDiagLambda
         blokgrootte = length(value)
-        if (blokgrootte > 0)
+        if blokgrootte > 0
             println(key, " of size ", blokgrootte)
             totaal = totaal + (blokgrootte * blokgrootte)
             totaalsom = totaalsom + (blokgrootte)
@@ -677,7 +677,7 @@ function GeneratePartitionsTableauxFullPlusHalf(d, k, t; option=true)
                                 newSSYTS = CreateSemiStandardTableauxsizedmurForShape(d - 1, Qisize - 1, shapeFirstQi)
                                 newsize = isempty(newSSYTS) ? 0 : newsize * length(newSSYTS)
                                 if newsize >= 1
-                                    if (!isempty(allowedSSYTSD) && !isempty(newSSYTS))
+                                    if !isempty(allowedSSYTSD) && !isempty(newSSYTS)
                                         productofmorethanonetableau = true
                                     end
                                     allowedSSYTSD = productQ(allowedSSYTSD, newSSYTS)
@@ -699,7 +699,7 @@ function GeneratePartitionsTableauxFullPlusHalf(d, k, t; option=true)
                                     newSSYTS = CreateSemiStandardTableauxsizedmurForShape(d, Qisize, shape)
                                     newsize = isempty(newSSYTS) ? 0 : newsize * length(newSSYTS)
                                     if newsize >= 1
-                                        if (!isempty(allowedSSYTSD) && !isempty(newSSYTS))
+                                        if !isempty(allowedSSYTSD) && !isempty(newSSYTS)
                                             productofmorethanonetableau = true
                                         end
                                         allowedSSYTSD = productQ(allowedSSYTSD, newSSYTS)
@@ -717,7 +717,7 @@ function GeneratePartitionsTableauxFullPlusHalf(d, k, t; option=true)
                                     end
                                 end
                                 allowedSSYTSD = Test
-                                if (!haskey(MapFinalBlockDiagLambda, (tableauxTuple, shapeFirstQi)))
+                                if !haskey(MapFinalBlockDiagLambda, (tableauxTuple, shapeFirstQi))
                                     MapFinalBlockDiagLambda[(tableauxTuple, shapeFirstQi)] = []
                                 end
                                 for test in 1:newsize
@@ -738,7 +738,7 @@ function GeneratePartitionsTableauxFullPlusHalf(d, k, t; option=true)
     maxblokgrootte = 0
     for (key, value) in MapFinalBlockDiagLambda
         blokgrootte = length(value)
-        if (blokgrootte > 0)
+        if blokgrootte > 0
             println(key, " of size ", blokgrootte)
             totaal = totaal + (blokgrootte * blokgrootte)
             totaalsom = totaalsom + blokgrootte
@@ -760,7 +760,7 @@ end
 #Takes as input two arrays with pairs (tableau,sign) and produces an array with all pairs (tableau1 cat tableau2, sign1*sign2)
 function TableauxVectorsProduct(ProductArray, NewTableauVectorWithSigns)
     OutputWithSigns = []
-    if (isempty(NewTableauVectorWithSigns) || isempty(ProductArray))
+    if isempty(NewTableauVectorWithSigns) || isempty(ProductArray)
         return isempty(ProductArray) ? NewTableauVectorWithSigns : ProductArray
     end
     for v1WithSign in ProductArray
@@ -790,7 +790,7 @@ function RepresentativeFullElement(indexobject, useColumnStabilizer=true)
     ProductTableauVectorsWithSigns = []
     for tauitableau in FilledKTableauxTuple
         TableauVectorsWithSigns = []
-        if (!isempty(tauitableau))
+        if !isempty(tauitableau)
             RowTableaux = AllRowEquivalentTableaux(tauitableau)
             for rowtab in RowTableaux
                 ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab, 1)]
@@ -868,7 +868,7 @@ function RepresentativeFullElementPlusHalf(indexobject, useColumnStabilizer=true
     ProductTableauVectorsWithSigns = []
     for tauitableau in FilledKTableauxTuple
         TableauVectorsWithSigns = []
-        if (!isempty(tauitableau))
+        if !isempty(tauitableau)
             RowTableaux = AllRowEquivalentTableaux(tauitableau)
             for rowtab in RowTableaux
                 ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab, 1)]
@@ -1020,10 +1020,10 @@ function ReduceInnerProductUsingImub(ReprRow, ReprCol)
         # println("NIEUW K-MONOOM")
         docheck1 = false
         docheck2 = false
-        if (tempmonoomK[1] == tempmonoomK[t+1])
+        if tempmonoomK[1] == tempmonoomK[t+1]
             docheck1 = true
         end
-        if (tempmonoomK[t] == tempmonoomK[2*t])
+        if tempmonoomK[t] == tempmonoomK[2*t]
             docheck2 = true
         end
         for i in unique(tempmonoomK)
@@ -1047,10 +1047,10 @@ function ReduceInnerProductUsingImub(ReprRow, ReprCol)
                 #InnerProduct(ReprDRow[IndexSet[1]],ReprDcol[IndexSet[2]])
                 for wordssign1 in ReprDRow[IndexSet[1]]
                     for wordssign2 in ReprDCol[IndexSet[2]]
-                        if (docheck1 && 1 in currentKpart && wordssign1[1][1] != wordssign2[1][1])
+                        if docheck1 && 1 in currentKpart && wordssign1[1][1] != wordssign2[1][1]
                             continue
                         end
-                        if (docheck2 && t in currentKpart && wordssign1[1][end] != wordssign2[1][end])
+                        if docheck2 && t in currentKpart && wordssign1[1][end] != wordssign2[1][end]
                             continue
                         end
                         temppartmonoomDim = make_partition([wordssign1[1]; wordssign2[1]])
@@ -1097,9 +1097,9 @@ function ReduceInnerProductUsingImub(ReprRow, ReprCol)
             tempmonoomDim[1:t] = tempmonoomDim[t:-1:1]
             ##add check
             givesZeroElement = false
-            # if (tempmonoomK[t]==tempmonoomK[t+1] && tempmonoomDim[t] != tempmonoomDim[t+1])
+            # if tempmonoomK[t]==tempmonoomK[t+1] && tempmonoomDim[t] != tempmonoomDim[t+1]
             #     givesZeroElement=true;
-            # elseif (tempmonoomK[2*t]==tempmonoomK[1] && tempmonoomDim[2*t] != tempmonoomDim[1])
+            # elseif tempmonoomK[2*t]==tempmonoomK[1] && tempmonoomDim[2*t] != tempmonoomDim[1]
             #     givesZeroElement=true;
             # end
             if !givesZeroElement

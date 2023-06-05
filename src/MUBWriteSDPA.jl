@@ -1,19 +1,7 @@
-using LinearAlgebra
-using RowEchelon
-using GenericLinearAlgebra
-using AbstractAlgebra
-using Combinatorics
-using DoubleFloats
-using Printf
-
-include("ConstructReprSet.jl")
-include("DetValMon.jl")
-include("HelperFunctions.jl")
-
 #WRITES SEPARATE BLOCKS FOR I=1-part of t-th level of MOMENT MATRIX, USING THE SYMMETRY REDUCTION!
 function MUBWriteSDPASk(d, k, t;
         option=false,
-        manual_epsilon=1e-16,  #if smaller than this epsilon, consider coefficient to be zero.
+        manual_epsilon=1e-16, # if smaller than this epsilon, consider coefficient to be zero.
     )
     MonomialValuesDictionary = Dict()
     VarSet = Set{Tuple{Vector{Int}, Vector{Int}}}()
@@ -61,7 +49,7 @@ function MUBWriteSDPASk(d, k, t;
             reprRowElement = ReprSetArray[rowidx]
             for colidx in 1:blockSize
                 reprColElement = ReprColSetArray[colidx]
-                if (colidx >= rowidx)
+                if colidx >= rowidx
                     #compute the inner product.
                     Block[rowidx, colidx] = Dict{Tuple{Vector{Int}, Vector{Int}}, Double64}()
                     InnerProduct = ReduceInnerProduct(reprRowElement, reprColElement; option=option)
@@ -505,9 +493,9 @@ function MUBWriteSDPA(d, k, t;
 
     #generate nonreduced version
     if option
-        BlocksElement = GeneratePartitionsTableauxFullPlusHalf(d, k, t, 0)
+        BlocksElement = GeneratePartitionsTableauxFullPlusHalf(d, k, t; option=false)
     else  #generate representative set for t-th level
-        BlocksElement = GeneratePartitionsTableauxFull(d, k, t, 0)
+        BlocksElement = GeneratePartitionsTableauxFull(d, k, t; option=false)
     end
     BlockSizesNonReduced = [size(x, 1) for (MultiPartition, x) in BlocksElement]
 
