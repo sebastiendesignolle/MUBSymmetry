@@ -6,14 +6,12 @@ function MUBWriteSDPASk(d, k, t;
     MonomialValuesDictionary = Dict()
     VarSet = Set{Tuple{Vector{Int}, Vector{Int}}}()
     println("##### Generating Representative Set...")
-
     if option
         println("#### CASE: d, k, t = ", d, " ", k, " ", t, "+1/2, i1-part.")
         @time BlocksElement = generatePartitionsTableauxPlusHalf(k, t, true)
         #println("##### Computing Inner Products in Base Block Diagonalization...")
         #@time InnerProducts = ReduceInnerProducts(ReprSet, ReprColSet, 2, true);
         Ivec = ones(Int, 2 * t + 1)
-
     else  #generate representative set for t-th level
         println("#### CASE: d, k, t = ", d, " ", k, " ", t)
         @time BlocksElement = generatePartitionsTableaux(k, t, true)
@@ -21,8 +19,7 @@ function MUBWriteSDPASk(d, k, t;
         #@time InnerProducts = ReduceInnerProducts(ReprSet, ReprColSet, 1, true);
         Ivec = ones(Int, 2 * t)
     end
-
-    println("##### Computing Final Block Diagonalization...")
+    println("##### Computing final block diagonalization...")
     ReducedBlocks = []
     BlockSizes = []
     MonomialValuesDictionary = Dict()
@@ -45,7 +42,7 @@ function MUBWriteSDPASk(d, k, t;
         end
         Block = Array{Dict{Tuple{Vector{Int64}, Vector{Int64}}, Double64}}(undef, blockSize, blockSize)
         for rowidx in 1:blockSize
-            print("row ", rowidx, " \r")
+            println("row ", rowidx)
             reprRowElement = ReprSetArray[rowidx]
             for colidx in 1:blockSize
                 reprColElement = ReprColSetArray[colidx]
@@ -76,10 +73,8 @@ function MUBWriteSDPASk(d, k, t;
         ReducedBlocks = push!(ReducedBlocks, Block)
         #	    empty!(MonomialValuesDictionary);
     end
-
     VarSetOrdered = []
     [push!(VarSetOrdered, x) for x in VarSet]
-
     println("Checking for additional constraints...")
     ##Now checking MUB-constraints
     ##for (d, k, t)=(7, 6, 4): normal inner products 150 sec (using the new inner product version exploiting tracial property/optimizations)
@@ -92,20 +87,15 @@ function MUBWriteSDPASk(d, k, t;
     end
     println("Checking Commutator Constraints...")
     time += @elapsed append!(ListMissing, CheckImubCommutatorsSk(d, k, t; option=option))
-
     nVars = length(VarSet)
     println("##### List of variables: ", VarSetOrdered)
-
     newConstraints = RemoveLinearDependentConstraints(ListMissing, VarSetOrdered)
     numberOfAdditionalConstraints = size(newConstraints, 1)
     println("##### New constraints returns ", numberOfAdditionalConstraints, " constraints:")
     println(newConstraints)
-
     println("blocksizes = $BlockSizes")
     println("Sum blocksizes = ", sum(BlockSizes))
-
     nBlocks = 2 * nVars + size(ReducedBlocks, 1) + 2 * numberOfAdditionalConstraints
-
     println("##### Writing the SDP...")
     ###start writing SDP file in SDPA-format (.dat-s)
     if option
@@ -119,17 +109,14 @@ function MUBWriteSDPASk(d, k, t;
         ioExtraConstraints = open(string("../dat/extraConstraints_d$d", "_k$k", "_t$t", "_i1part.txt"), "w")
         ioTable = open(string("../dat/table_d$d", "_k$k", "_t$t", "_i1part.txt"), "w")
     end
-
     for i in 1:nVars
         println(iovars, i, " ", VarSetOrdered[i])
     end
     close(iovars)
-
     for i in 1:numberOfAdditionalConstraints
         println(ioExtraConstraints, i, " ", newConstraints[i])
     end
     close(ioExtraConstraints)
-
     #print the number of variables, the number of blocks and the block sizes.
     println(io, nVars)
     println(io, nBlocks)
@@ -155,7 +142,6 @@ function MUBWriteSDPASk(d, k, t;
         println(io, i, " ", blocknumber + 1, " ", 1, " ", 1, " ", -1)
         println(io, 0, " ", blocknumber + 1, " ", 1, " ", 1, " ", -1)
     end
-
     #now print the additional linear constraints
     for i in 1:numberOfAdditionalConstraints
         constraint = newConstraints[i]
@@ -178,13 +164,11 @@ function MUBWriteSDPASk(d, k, t;
             end
         end
     end
-
     #now print the constraint that the moment matrix must be p.s.d. (note, the block number is nBlocks)
     @time for blockindex in 1:size(ReducedBlocks, 1)
         ArrayBlock = ReducedBlocks[blockindex]
         blocknumber = blockindex + 2 * nVars + 2 * numberOfAdditionalConstraints
         reducedBlockSize = size(ArrayBlock, 1)
-
         for i in 1:reducedBlockSize
             for j in i:reducedBlockSize
                 coefficient = get(ReducedBlocks[blockindex][i, j], ([-1], [-1]), 0)
@@ -202,7 +186,6 @@ function MUBWriteSDPASk(d, k, t;
         end
     end
     close(io)
-
     if option
         println(ioTable, "time ", time)
         println(
@@ -251,9 +234,7 @@ function MUBWriteSDPASk(d, k, t;
             " &  \\\\",
         )
     end
-
     close(ioTable)
-
     println("##### Writing finished.")
 end
 
@@ -262,19 +243,16 @@ function MUBWriteSDPA(d, k, t;
         option=false,
         manual_epsilon=1e-16,  #if smaller than this epsilon, consider coefficient to be zero.
     )
-
     if option
         println("#### FULL SYMMETRY, CASE: d, k, t = ", d, " ", k, " ", t, "+1/2.")
         println("##### Generating SetPartitions, Compositions, (Multi)Partitions and Tableaux...")
         @time BlocksElement = GeneratePartitionsTableauxFullPlusHalf(d, k, t)
-
     else  #generate representative set for t-th level
         println("#### FULL SYMMETRY, CASE: d, k, t = ", d, " ", k, " ", t)
         println("##### Generating SetPartitions, Compositions, (Multi)Partitions and Tableaux...")
         @time BlocksElement = GeneratePartitionsTableauxFull(d, k, t)
     end
-
-    println("##### Computing Block Diagonalization...")
+    println("##### Computing block diagonalization...")
     ReducedBlocks = []
     BlockSizes = []
     MonomialValuesDictionary = Dict()
@@ -309,22 +287,18 @@ function MUBWriteSDPA(d, k, t;
         # end
         Block = Array{Dict{Tuple{Vector{Int8}, Vector{Int8}}, Double64}}(undef, blockSize, blockSize)
         println("Computing inner products for this block... ")
-
         for rowindex in 1:blockSize
-            print("rij ", rowindex, "     \r")
+            println("rij ", rowindex)
             # println(ReprSetArray[rowindex])
             # return
             for colindex in rowindex:blockSize
                 #compute the inner product.
-
                 timerinnerproduct += @elapsed TotalInnerProducts =
                     ReduceInnerProductUsingImub(ReprSetArray[rowindex], ReprColSetArray[colindex])
-
                 Block[rowindex, colindex] = Dict{Tuple{Vector{Int}, Vector{Int}}, Double64}()
                 for (monomialpair, value) in TotalInnerProducts
                     tempmonoomd = monomialpair[1]
                     tempmonoomK = monomialpair[2]
-
                     if !haskey(MonomialValuesDictionary, monomialpair)
                         ifcounter += 1
                         DictValueMon = Dict{Tuple{Vector{Int}, Vector{Int}}, Double64}()
@@ -352,14 +326,12 @@ function MUBWriteSDPA(d, k, t;
         end
         ReducedBlocks = push!(ReducedBlocks, Block)
     end
-
     println("DetermineValueForLoop: ", timer)
     println("ifcounter: ", ifcounter)
     println("elsecounter: ", elsecounter)
     println("Inner Products: ", timerinnerproduct)
     VarSetOrdered = []
     [push!(VarSetOrdered, x) for x in VarSet]
-
     println("Checking for additional constraints...")
     ##Now checking MUB-constraints
     ##for (d, k, t)=(7, 6, 4): normal inner products 150 sec (using the new inner product version exploiting tracial property/optimizations)
@@ -381,19 +353,15 @@ function MUBWriteSDPA(d, k, t;
     end
     println("Checking Commutator Constraints...")
     time += @elapsed append!(ListMissing, CheckImubCommutatorsV2(d, k, t; option=option))
-
     nVars = length(VarSet)
     println("##### List of variables: ", VarSetOrdered)
     newConstraints = RemoveLinearDependentConstraints(ListMissing, VarSetOrdered)
     numberOfAdditionalConstraints = size(newConstraints, 1)
     println("##### New constraints returns ", numberOfAdditionalConstraints, " constraints:")
     println(newConstraints)
-
     println("blocksizes = $BlockSizes")
     println("Sum blocksizes = ", sum(BlockSizes))
-
     nBlocks = 2 * nVars + size(ReducedBlocks, 1) + 2 * numberOfAdditionalConstraints
-
     println("##### Writing the SDP...")
     ###start writing SDP file in SDPA-format (.dat-s)
     if option
@@ -407,17 +375,14 @@ function MUBWriteSDPA(d, k, t;
         ioExtraConstraints = open(string("../dat/extraConstraints_d$d", "_k$k", "_t$t", ".txt"), "w")
         ioTable = open(string("../dat/table_d$d", "_k$k", "_t$t", ".txt"), "w")
     end
-
     for i in 1:nVars
         println(iovars, i, " ", VarSetOrdered[i])
     end
     close(iovars)
-
     for i in 1:numberOfAdditionalConstraints
         println(ioExtraConstraints, i, " ", newConstraints[i])
     end
     close(ioExtraConstraints)
-
     #print the number of variables, the number of blocks and the block sizes.
     println(io, nVars)
     println(io, nBlocks)
@@ -443,7 +408,6 @@ function MUBWriteSDPA(d, k, t;
         println(io, i, " ", blocknumber + 1, " ", 1, " ", 1, " ", -1)
         println(io, 0, " ", blocknumber + 1, " ", 1, " ", 1, " ", -1)
     end
-
     #now print the additional linear constraints
     for i in 1:numberOfAdditionalConstraints
         constraint = newConstraints[i]
@@ -466,13 +430,11 @@ function MUBWriteSDPA(d, k, t;
             end
         end
     end
-
     #now print the constraint that the moment matrix must be p.s.d. (note, the block number is nBlocks)
     time += @elapsed for blockindex in 1:size(ReducedBlocks, 1)
         ArrayBlock = ReducedBlocks[blockindex]
         blocknumber = blockindex + 2 * nVars + 2 * numberOfAdditionalConstraints
         reducedBlockSize = size(ArrayBlock, 1)
-
         for i in 1:reducedBlockSize
             for j in i:reducedBlockSize
                 coefficient = get(ReducedBlocks[blockindex][i, j], ([-1], [-1]), 0)
@@ -490,7 +452,6 @@ function MUBWriteSDPA(d, k, t;
         end
     end
     close(io)
-
     #generate nonreduced version
     if option
         BlocksElement = GeneratePartitionsTableauxFullPlusHalf(d, k, t; option=false)
@@ -498,7 +459,6 @@ function MUBWriteSDPA(d, k, t;
         BlocksElement = GeneratePartitionsTableauxFull(d, k, t; option=false)
     end
     BlockSizesNonReduced = [size(x, 1) for (MultiPartition, x) in BlocksElement]
-
     if option
         println(ioTable, "time ", time)
         println(
@@ -558,9 +518,7 @@ function MUBWriteSDPA(d, k, t;
             " &  \\\\",
         )
     end
-
     close(ioTable)
-
     println("##### Writing finished.")
 end
 
@@ -571,19 +529,16 @@ function MUBWriteSDPATEMP()
     t = 5
     option = true
     manual_epsilon = 1e-16  #if smaller than this epsilon, consider coefficient to be zero.
-
     if option
         println("#### FULL SYMMETRY, CASE: d, k, t = ", d, " ", k, " ", t, "+1/2.")
         println("##### Generating SetPartitions, Compositions, (Multi)Partitions and Tableaux...")
         @time BlocksElement = GeneratePartitionsTableauxFullPlusHalf(d, k, t)
-
     else  #generate representative set for t-th level
         println("#### FULL SYMMETRY, CASE: d, k, t = ", d, " ", k, " ", t)
         println("##### Generating SetPartitions, Compositions, (Multi)Partitions and Tableaux...")
         @time BlocksElement = GeneratePartitionsTableauxFull(d, k, t)
     end
-
-    println("##### Computing Block Diagonalization...")
+    println("##### Computing block diagonalization...")
     ReducedBlocks = []
     BlockSizes = []
     MonomialValuesDictionary = Dict()
@@ -591,7 +546,6 @@ function MUBWriteSDPATEMP()
     timer = 0
     timerinnerproduct = 0
     blockindex = 0
-
     ifcounter = 0
     elsecounter = 0
     numzerorows = 0
@@ -619,22 +573,18 @@ function MUBWriteSDPATEMP()
         # end
         Block = Array{Dict{Tuple{Vector{Int8}, Vector{Int8}}, Double64}}(undef, blockSize, blockSize)
         println("Computing inner products for this block... ")
-
         for rowindex in 1:blockSize
-            print("rij ", rowindex, "     \r")
+            println("rij ", rowindex)
             # println(ReprSetArray[rowindex])
             # return
             for colindex in rowindex:blockSize
                 #compute the inner product.
-
                 timerinnerproduct += @elapsed TotalInnerProducts =
                     ReduceInnerProductUsingImub(ReprSetArray[rowindex], ReprColSetArray[colindex])
-
                 Block[rowindex, colindex] = Dict{Tuple{Vector{Int}, Vector{Int}}, Double64}()
                 for (monomialpair, value) in TotalInnerProducts
                     tempmonoomd = monomialpair[1]
                     tempmonoomK = monomialpair[2]
-
                     if !haskey(MonomialValuesDictionary, monomialpair)
                         ifcounter += 1
                         DictValueMon = Dict{Tuple{Vector{Int}, Vector{Int}}, Double64}()
@@ -662,18 +612,15 @@ function MUBWriteSDPATEMP()
         end
         ReducedBlocks = push!(ReducedBlocks, Block)
     end
-
     println("DetermineValueForLoop: ", timer)
     println("ifcounter: ", ifcounter)
     println("elsecounter: ", elsecounter)
     println("Inner Products: ", timerinnerproduct)
     VarSetOrdered = []
     [push!(VarSetOrdered, x) for x in VarSet]
-
     println("Checking for additional constraints...")
     ##Now checking MUB-constraints
     ##for (d, k, t)=(7, 6, 4): normal inner products 150 sec (using the new inner product version exploiting tracial property/optimizations)
-
     nVars = length(VarSet)
     println("##### List of variables: ", VarSetOrdered)
     newConstraints = Dict{Tuple{Vector{Int}, Vector{Int}}, Double64}[
@@ -781,12 +728,9 @@ function MUBWriteSDPATEMP()
     numberOfAdditionalConstraints = size(newConstraints, 1)
     println("##### New constraints returns ", numberOfAdditionalConstraints, " constraints:")
     println(newConstraints)
-
     println("blocksizes = $BlockSizes")
     println("Sum blocksizes = ", sum(BlockSizes))
-
     nBlocks = 2 * nVars + size(ReducedBlocks, 1) + 2 * numberOfAdditionalConstraints
-
     println("##### Writing the SDP...")
     ###start writing SDP file in SDPA-format (.dat-s)
     if option
@@ -800,17 +744,14 @@ function MUBWriteSDPATEMP()
         ioExtraConstraints = open(string("../dat/extraConstraints_d$d", "_k$k", "_t$t", ".txt"), "w")
         ioTable = open(string("../dat/table_d$d", "_k$k", "_t$t", ".txt"), "w")
     end
-
     for i in 1:nVars
         println(iovars, i, " ", VarSetOrdered[i])
     end
     close(iovars)
-
     for i in 1:numberOfAdditionalConstraints
         println(ioExtraConstraints, i, " ", newConstraints[i])
     end
     close(ioExtraConstraints)
-
     #print the number of variables, the number of blocks and the block sizes.
     println(io, nVars)
     println(io, nBlocks)
@@ -836,7 +777,6 @@ function MUBWriteSDPATEMP()
         println(io, i, " ", blocknumber + 1, " ", 1, " ", 1, " ", -1)
         println(io, 0, " ", blocknumber + 1, " ", 1, " ", 1, " ", -1)
     end
-
     #now print the additional linear constraints
     for i in 1:numberOfAdditionalConstraints
         constraint = newConstraints[i]
@@ -859,13 +799,11 @@ function MUBWriteSDPATEMP()
             end
         end
     end
-
     #now print the constraint that the moment matrix must be p.s.d. (note, the block number is nBlocks)
     time += @elapsed for blockindex in 1:size(ReducedBlocks, 1)
         ArrayBlock = ReducedBlocks[blockindex]
         blocknumber = blockindex + 2 * nVars + 2 * numberOfAdditionalConstraints
         reducedBlockSize = size(ArrayBlock, 1)
-
         for i in 1:reducedBlockSize
             for j in i:reducedBlockSize
                 coefficient = get(ReducedBlocks[blockindex][i, j], ([-1], [-1]), 0)
@@ -883,7 +821,6 @@ function MUBWriteSDPATEMP()
         end
     end
     close(io)
-
     #generate nonreduced version
     if option
         BlocksElement = GeneratePartitionsTableauxFullPlusHalf(d, k, t, 0)
@@ -891,7 +828,6 @@ function MUBWriteSDPATEMP()
         BlocksElement = GeneratePartitionsTableauxFull(d, k, t, 0)
     end
     BlockSizesNonReduced = [size(x, 1) for (MultiPartition, x) in BlocksElement]
-
     if option
         println(ioTable, "time ", time)
         println(
@@ -951,9 +887,7 @@ function MUBWriteSDPATEMP()
             " &  \\\\",
         )
     end
-
     close(ioTable)
-
     println("##### Writing finished.")
 end
 
@@ -976,7 +910,6 @@ function CheckImubProjectorOrthogonality(d, k, t; option=false)
                 VarSet, Dict2 =
                     DetValMon(VarSet, Dict{Tuple{Vector{Int}, Vector{Int}}, Double64}(), d, tempIvec2, tempKvec2, -1)
                 testValue = merge(+, Dict1, Dict2)
-
                 if !checkValue(testValue)
                     push!(ListMissing, testValue)
                 end
@@ -1054,7 +987,6 @@ function CheckImubPOVMSimple(d, k, t; option=false)
             indices_of_basis = findall(x -> x == j - 1, Kvec)
             Ivec_of_basis = [Ivec[iindex] for iindex in indices_of_basis]
             maximumIvec = isempty(Ivec_of_basis) ? 0 : maximum(Ivec_of_basis)
-
             for i in 1:maximumIvec+1
                 tempIvec2 = push!(deepcopy(Ivec), i - 1)
                 tempKvec2 = push!(deepcopy(Kvec), j - 1)
@@ -1118,21 +1050,17 @@ function RemoveLinearDependentConstraints(ListMissing, VarSetOrdered)
     for constraint in ListMissing
         TempVarSet = AddVariable(TempVarSet, constraint)
     end
-
     treshold = 0.0000000001
     numberOfVariables = size(TempVarSet, 1)
     push!(TempVarSet, ([-1], [-1]))
     Matrix = zeros(Double64, size(ListMissing, 1), numberOfVariables + 1)
-
     for i in 1:size(ListMissing, 1)
         for j in 1:numberOfVariables+1
             Matrix[i, j] = get(ListMissing[i], TempVarSet[j], 0)
         end
     end
     #display(Matrix)
-
     M = RowEchelon.rref!(Matrix)
-
     nonZeroDictList = []
     for i in 1:size(M, 1)
         isZero = true
@@ -1179,7 +1107,7 @@ function CheckImubCommutators(degu, degv, d, k, degt)
     println("Reduced list of wordPairs has been computed...")
     wordsT = degt > degu ? ReducedMonomials(d, k, degt + 1) : GenMonNC(d, k, degt)
     for w in 1:size(wordPairs, 1)
-        print("word: ", w, "/", size(wordPairs, 1), " \r")
+        println("word: ", w, "/", size(wordPairs, 1))
         wordI = wordPairs[w][1:degu+degv+3]
         wordK = wordPairs[w][degu+degv+4:end]
         wordI2 = [wordI[1]; wordI[3+degu:2+degu+degv]; wordI[2+degu]; wordI[2:degu+1]; wordI[degu+degv+3]]

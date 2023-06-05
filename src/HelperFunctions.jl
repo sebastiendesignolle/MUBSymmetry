@@ -26,7 +26,6 @@ function ReducedMonomials(d, k, t, reduced=false)
         for Pi in P
             Kvec[Pi] .= piindex
             piindex += 1
-
             IvecPart = zeros(Int, size(Pi, 1))
             qiindex = 0
             for Qii in Q[piindex]
@@ -93,18 +92,18 @@ function ReducedMonomialsv2(d, k, t)
             index1 = 1
             while index1 < length(Ivec)    #if there is a basis which occurs twice subsequently: reduce using Projector-constraint
                 index2 = index1 + 1
-                if (Kvec[index1] == Kvec[index2] && Ivec[index1] != Ivec[index2])
+                if Kvec[index1] == Kvec[index2] && Ivec[index1] != Ivec[index2]
                     givesZeroRow = true
                     break
                 end
-                if (Kvec[index1] == Kvec[index2] && Ivec[index1] == Ivec[index2])
+                if Kvec[index1] == Kvec[index2] && Ivec[index1] == Ivec[index2]
                     deleteat!(Kvec, index1)
                     deleteat!(Ivec, index1)
                     index1 -= 1
                 end
                 index1 += 1
             end
-            if (!givesZeroRow)
+            if !givesZeroRow
                 push!(MonomialsList, (Ivec, Kvec))
             end
         end
@@ -117,7 +116,7 @@ function minimumcyclicpart(v)
     outputvector = deepcopy(v)
     for i in 1:length(v)
         vtemp = make_partition([v[i+1:end]; v[1:i]])
-        if (isless(vtemp, outputvector))
+        if isless(vtemp, outputvector)
             outputvector = vtemp
         end
     end
@@ -142,8 +141,8 @@ end
 function minimumLexico(Ivec, Kvec)
     outputKvector = deepcopy(Kvec)
     outputIvector = deepcopy(Ivec)
-    (tempI, tempK) = minimumcyclicpartIK(outputIvector, outputKvector)
-    (tempI2, tempK2) = minimumcyclicpartIK(outputIvector[end:-1:1], outputKvector[end:-1:1])
+    tempI, tempK = minimumcyclicpartIK(outputIvector, outputKvector)
+    tempI2, tempK2 = minimumcyclicpartIK(outputIvector[end:-1:1], outputKvector[end:-1:1])
     if isless([tempK, tempI], [tempK2, tempI2])
         outputKvector = tempK
         outputIvector = tempI
@@ -163,7 +162,7 @@ function renumberIdependingOnK(Ivec, Kvec)
 end
 
 function make_partition(J)  #returns lexicographically smallest element of S_n-orbit of word in {0,..,n-1}^t
-    #For example: make_partition([3, 3, 2, 1]) = [0,0,1,2]
+    #For example: make_partition([3, 3, 2, 1]) = [0, 0, 1, 2]
     originalJ = deepcopy(J)
     n = length(J)
     toberenumbered = collect(1:n) #vector of all indices
@@ -250,11 +249,11 @@ function CreateRelevantPQiPartitions(d, k, t)
             givesZeroRow = false
             for index1 in 1:t-1    #if there is a basis which occurs twice subsequently: reduce using Projector-constraint
                 index2 = index1 + 1
-                if (Kvec[index1] == Kvec[index2] && Ivec[index1] != Ivec[index2])
+                if Kvec[index1] == Kvec[index2] && Ivec[index1] != Ivec[index2]
                     givesZeroRow = true
                 end
             end
-            if (!givesZeroRow)
+            if !givesZeroRow
                 Qdef = convert(Vector{Vector{Vector{Int8}}}, Qdef)
                 push!(PWithQList, (P, Qdef))
             end
@@ -303,15 +302,15 @@ function CreateRelevantPQiPartitionsV2(d, k, t)
             while index1 < length(Ivec)    #if there is a basis which occurs twice subsequently: reduce using Projector-constraint
                 index2 = index1 + 1
                 index3 = index1 + 2
-                if (Kvec[index1] == Kvec[index2] && Ivec[index1] != Ivec[index2])
+                if Kvec[index1] == Kvec[index2] && Ivec[index1] != Ivec[index2]
                     givesZeroRow = true
                     break
                 end
-                if (Kvec[index1] == Kvec[index2] && Ivec[index1] == Ivec[index2])
+                if Kvec[index1] == Kvec[index2] && Ivec[index1] == Ivec[index2]
                     deleteat!(Kvec, index1)
                     deleteat!(Ivec, index1)
                     index1 -= 1
-                elseif (index3 <= length(Ivec) && Kvec[index1] == Kvec[index3] && Ivec[index1] == Ivec[index3]) ##reduce X_{index1,k} X_{index2,l} X{index1,k} 
+                elseif index3 <= length(Ivec) && Kvec[index1] == Kvec[index3] && Ivec[index1] == Ivec[index3] ##reduce X_{index1,k} X_{index2,l} X{index1,k} 
                     deleteat!(Kvec, index2)
                     deleteat!(Ivec, index2)
                     index1 -= 1
@@ -320,7 +319,7 @@ function CreateRelevantPQiPartitionsV2(d, k, t)
             end
             Ivec = renumberIdependingOnK(Ivec, Kvec)
             Kvec = make_partition(Kvec)
-            if (!givesZeroRow)
+            if !givesZeroRow
                 Qdef = convert(Vector{Vector{Vector{Int8}}}, Qdef)
                 WordDict[(Ivec, Kvec)] = (P, Qdef)
             end
@@ -382,7 +381,7 @@ function printCoefficient(coefficient)
     coefficientstring = toString(coefficient, printprecision)
     coefficientstring = coefficientstring[1:min(sizeof(coefficientstring), printprecision)]
     #delete trailing zeros
-    if (occursin(".", coefficientstring))
+    if occursin(".", coefficientstring)
         digit = coefficientstring[end]
         while (cmp(digit, '0') == 0 || cmp(digit, '.') == 0)
             coefficientstring = chop(coefficientstring)
