@@ -1,6 +1,6 @@
-## SIMPLE COMBINATORIAL FUNCTIONS TO WORK WITH TABLOIDS, TABLEAUX
+# SIMPLE COMBINATORIAL FUNCTIONS TO WORK WITH TABLOIDS, TABLEAUX
 
-#generate the young shapes of a tableau of k boxes and height at most r
+# generate the young shapes of a tableau of k boxes and height at most r
 function ShapeAtMost(k, r)
     startset = collect(partitions(k, 1))
     for j in 2:r
@@ -9,7 +9,7 @@ function ShapeAtMost(k, r)
     return startset
 end
 
-#generate the young shapes of a tableau of k boxes and height at most r+1
+# generate the young shapes of a tableau of k boxes and height at most r+1
 # WITH AT LEAST k-r BOXES IN FIRST ROW
 function ShapeAtMostrplus1Startkr(k, r)
     shapes = ShapeAtMost(k, r + 1)
@@ -26,7 +26,7 @@ function IsSemiStandard(Y)
     issemi = true
     rowpartition = Y.part
     colpartition = conj(Y).part
-    #check rows
+    # check rows
     for i in 1:size(rowpartition, 1)
         for j in 1:(rowpartition[i]-1)
             if Y[i, j] > Y[i, j+1]
@@ -152,13 +152,13 @@ function generatePartitionsTableaux(k::Int, t::Int, reduced=true)
                 piindex += 1
             end
             index1 = 1
-            while index1 < length(Kvec)    #if there is a basis which occurs twice subsequently: reduce using Projector-constraint
+            while index1 < length(Kvec)    # if there is a basis which occurs twice subsequently: reduce using Projector-constraint
                 index2 = index1 + 1
                 index3 = index1 + 2
                 if Kvec[index1] == Kvec[index2]
                     deleteat!(Kvec, index1)
                     index1 -= 1
-                elseif index3 <= length(Kvec) && Kvec[index1] == Kvec[index3] ##reduce X_{index1,k} X_{index2,l} X{index1,k} 
+                elseif index3 <= length(Kvec) && Kvec[index1] == Kvec[index3] ## reduce X_{index1,k} X_{index2,l} X{index1,k} 
                     deleteat!(Kvec, index2)
                     index1 -= 1
                 end
@@ -174,7 +174,7 @@ function generatePartitionsTableaux(k::Int, t::Int, reduced=true)
         NewPartitions = AllPartitions
     end
     blockSizes = Int[]
-    #maxblockSize=0;
+    # maxblockSize = 0
     LambdaToBlocksDict = Dict()
     for lambda in Lambdas
         # maxreprelementsize = 0
@@ -187,7 +187,7 @@ function generatePartitionsTableaux(k::Int, t::Int, reduced=true)
             for candidate in candidates
                 fill!(Ystart, candidate)
                 if IsSemiStandard(Ystart)
-                    #push a deepcopy so that we push the correct filling and do not change it afterwards.
+                    # push a deepcopy so that we push the correct filling and do not change it afterwards.
                     GoodTableauxPartitions = push!(GoodTableauxPartitions, (deepcopy(Ystart), setpart))
                 end
             end
@@ -205,7 +205,7 @@ end
 # generate per block (indexed by lambda) the possible pairs (semistandard tableaux, set partition)
 # if reduced=true, REDUCE partitions using projector and MUB-constraints 
 function generatePartitionsTableauxPlusHalf(k, t, reduced=true)
-    k -= 1  #act only on k-1 elements with Sk-1 for level t+1/2
+    k -= 1  # act only on k-1 elements with Sk-1 for level t+1/2
     maxheight = min(k, t + 1)
     Lambdas = ShapeAtMost(k, maxheight)
     AllPartitions = SetPartitionsAtMost(t + 1, min(k + 1, t + 1))
@@ -215,7 +215,7 @@ function generatePartitionsTableauxPlusHalf(k, t, reduced=true)
     # maxblockSize = 0
     if reduced == true
         for P in AllPartitions
-            #Create Kvec out of P.
+            # Create Kvec out of P.
             Kvec = zeros(Int, t + 1)
             piindex = 0
             for Pi in P
@@ -223,13 +223,13 @@ function generatePartitionsTableauxPlusHalf(k, t, reduced=true)
                 piindex += 1
             end
             index1 = 1
-            while index1 < length(Kvec)    #if there is a basis which occurs twice subsequently: reduce using Projector-constraint
+            while index1 < length(Kvec)    # if there is a basis which occurs twice subsequently: reduce using Projector-constraint
                 index2 = index1 + 1
                 index3 = index1 + 2
                 if Kvec[index1] == Kvec[index2]
                     deleteat!(Kvec, index1)
                     index1 -= 1
-                elseif index3 <= length(Kvec) && Kvec[index1] == Kvec[index3] ##reduce X_{index1,k} X_{index2,l} X{index1,k} 
+                elseif index3 <= length(Kvec) && Kvec[index1] == Kvec[index3] ## reduce X_{index1,k} X_{index2,l} X{index1,k} 
                     deleteat!(Kvec, index2)
                     index1 -= 1
                 end
@@ -251,12 +251,12 @@ function generatePartitionsTableauxPlusHalf(k, t, reduced=true)
         GoodTableauxPartitions = Tuple{Generic.YoungTableau{Int}, Vector{Vector{Int}}}[]
         blockSize = 0
         for setpart in NewPartitions
-            r = size(setpart, 1) - 1  #first partition will correspond to first symbol which is fixed
+            r = size(setpart, 1) - 1  # first partition will correspond to first symbol which is fixed
             candidates = AllCandidateVectors(k, r)
             for candidate in candidates
                 fill!(Ystart, candidate)
                 if IsSemiStandard(Ystart)
-                    #push a deepcopy so that we push the correct filling and do not change it afterwards.
+                    # push a deepcopy so that we push the correct filling and do not change it afterwards.
                     GoodTableauxPartitions = push!(GoodTableauxPartitions, (deepcopy(Ystart), setpart))
                     blockSize += 1
                 end
@@ -272,7 +272,7 @@ function generatePartitionsTableauxPlusHalf(k, t, reduced=true)
     return LambdaToBlocksDict
 end
 
-#generate representative set for k bases and level t
+# generate representative set for k bases and level t
 function RepresentativeSkElement(indexobject, t, useColumnStabilizer=true)
     GoodTableauxPartitions = indexobject
     blockSize = size(GoodTableauxPartitions, 1)
@@ -287,7 +287,7 @@ function RepresentativeSkElement(indexobject, t, useColumnStabilizer=true)
             ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab, 1)]
             for coltab in ColTableaux
                 FillVector = coltab[1].fill
-                #we combine the fillvector and the partition into a word of length t;
+                # we combine the fillvector and the partition into a word of length t;
                 Word = zeros(Int, t)
                 for symbol in 2:r+1
                     position = findall(x -> x .== symbol, FillVector)[1]
@@ -303,7 +303,7 @@ function RepresentativeSkElement(indexobject, t, useColumnStabilizer=true)
     return ReprArrayLambda
 end
 
-#generate representative set for k bases and level t+1/2
+# generate representative set for k bases and level t+1/2
 function RepresentativeSkElementPlusHalf(indexobject, t, useColumnStabilizer=true)
     GoodTableauxPartitions = indexobject
     blockSize = size(GoodTableauxPartitions, 1)
@@ -311,14 +311,14 @@ function RepresentativeSkElementPlusHalf(indexobject, t, useColumnStabilizer=tru
     for rowindex in 1:blockSize
         sigmawithP1 = GoodTableauxPartitions[rowindex]
         P1 = sigmawithP1[2]
-        r = size(P1, 1) - 1  #minus one because the first partition is fixed
+        r = size(P1, 1) - 1  # minus one because the first partition is fixed
         WordsWithSigns = Tuple{Vector{Int}, Int}[]
         RowTableaux = AllRowEquivalentTableaux(sigmawithP1[1])
         for rowtab in RowTableaux
             ColTableaux = useColumnStabilizer ? AllColumnSignTableaux(rowtab) : [(rowtab, 1)]
             for coltab in ColTableaux
                 FillVector = coltab[1].fill
-                #we combine the fillvector and the partition into a word of length t;
+                # we combine the fillvector and the partition into a word of length t;
                 Word = zeros(Int, t + 1)
                 FirstSet = P1[1]
                 Word[FirstSet] .= 1
@@ -328,7 +328,7 @@ function RepresentativeSkElementPlusHalf(indexobject, t, useColumnStabilizer=tru
                     Word[Set] .= position + 1
                 end
                 Sign = coltab[2]
-                popfirst!(Word)  #this is optional. We remove the first element from the word, so that we obtain a word of length t instead of a word of length t+1 starting with 1.
+                popfirst!(Word)  # this is optional. We remove the first element from the word, so that we obtain a word of length t instead of a word of length t+1 starting with 1.
                 WordsWithSigns = push!(WordsWithSigns, (Word, Sign))
             end
         end
@@ -779,7 +779,7 @@ end
 # Takes as input a tuple (P,Q,tau,sigma)
 # Outputs (WordsKWithSigns, WordsDWithSigns, P, Q) where the tensor product of the first two defines the noncommutative polynomial (by taking the signed sum of the entries) corresponding to the representative element.
 # P and Q are returned for convenience.
-function RepresentativeFullElement(indexobject)
+function RepresentativeFullElement(indexobject, useColumnStabilizer=true)
     P = indexobject[1]
     # determine t
     t = 0

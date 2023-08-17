@@ -19,7 +19,7 @@ function ReducedMonomials(d, k, t, reduced=false)
     for PQ in PQs
         P = PQ[1]
         Q = PQ[2]
-        #Create Kvec and Ivec out of P,Q.
+        # Create Kvec and Ivec out of P,Q.
         Kvec = zeros(Int, t)
         Ivec = zeros(Int, t)
         piindex = 0
@@ -43,7 +43,7 @@ function MonomialsSk(k, t)
     Ps = SetPartitionsAtMost(t, k)
     List = []
     for P in Ps
-        #Create Kvec out of P
+        # Create Kvec out of P
         Kvec = zeros(Int, t)
         piindex = 0
         for Pi in P
@@ -66,13 +66,13 @@ function ReducedMonomialsv2(d, k, t)
         end
         for Q in QPartitionslist
             Qdef = flatten(Q)
-            #Make sure that if P consists of only one part, we still consider Q as a collection [Q_1].
+            # Make sure that if P consists of only one part, we still consider Q as a collection [Q_1].
             if size(P, 1) == 1
                 Test = Any[]
                 push!(Test, Qdef)
                 Qdef = Test
             end
-            #Create Kvec and Ivec out of P,Qdef.
+            # Create Kvec and Ivec out of P,Qdef.
             Kvec = zeros(Int, t)
             Ivec = zeros(Int, t)
             piindex = 0
@@ -87,10 +87,10 @@ function ReducedMonomialsv2(d, k, t)
                 end
                 Ivec[Pi] .= IvecPart
             end
-            #check if (Kvec, Ivec) gives zero row
+            # check if (Kvec, Ivec) gives zero row
             givesZeroRow = false
             index1 = 1
-            while index1 < length(Ivec)    #if there is a basis which occurs twice subsequently: reduce using Projector-constraint
+            while index1 < length(Ivec)    # if there is a basis which occurs twice subsequently: reduce using Projector-constraint
                 index2 = index1 + 1
                 if Kvec[index1] == Kvec[index2] && Ivec[index1] != Ivec[index2]
                     givesZeroRow = true
@@ -161,11 +161,11 @@ function renumberIdependingOnK(Ivec, Kvec)
     return Ivec
 end
 
-function make_partition(J)  #returns lexicographically smallest element of S_n-orbit of word in {0,..,n-1}^t
-    #For example: make_partition([3, 3, 2, 1]) = [0, 0, 1, 2]
+function make_partition(J)  # returns lexicographically smallest element of S_n-orbit of word in {0,..,n-1}^t
+    # For example: make_partition([3, 3, 2, 1]) = [0, 0, 1, 2]
     originalJ = deepcopy(J)
     n = length(J)
-    toberenumbered = collect(1:n) #vector of all indices
+    toberenumbered = collect(1:n) # vector of all indices
     countrenumbered = 0
     newentry = 0
     while countrenumbered < n
@@ -178,7 +178,7 @@ function make_partition(J)  #returns lexicographically smallest element of S_n-o
     return J
 end
 
-#generate array of set partitions of [t] into at most r parts;
+# generate array of set partitions of [t] into at most r parts;
 function SetPartitionsAtMost(t, r)
     startset = collect(partitions(collect(1:t), 1))
     for j in 2:r
@@ -199,7 +199,7 @@ function CreatePQiPartitions(d, k, t)
         end
         for Q in QPartitionslist
             Qdef = flatten(Q)
-            #Make sure that if P consists of only one part, we still consider Q as a collection [Q_1].
+            # Make sure that if P consists of only one part, we still consider Q as a collection [Q_1].
             if size(P, 1) == 1
                 Test = Any[]
                 push!(Test, Qdef)
@@ -224,13 +224,13 @@ function CreateRelevantPQiPartitions(d, k, t)
         end
         for Q in QPartitionslist
             Qdef = flatten(Q)
-            #Make sure that if P consists of only one part, we still consider Q as a collection [Q_1].
+            # Make sure that if P consists of only one part, we still consider Q as a collection [Q_1].
             if size(P, 1) == 1
                 Test = Any[]
                 push!(Test, Qdef)
                 Qdef = Test
             end
-            #Create Kvec and Ivec out of P,Qdef.
+            # Create Kvec and Ivec out of P,Qdef.
             Kvec = zeros(Int, t)
             Ivec = zeros(Int, t)
             piindex = 0
@@ -245,9 +245,9 @@ function CreateRelevantPQiPartitions(d, k, t)
                 end
                 Ivec[Pi] .= IvecPart
             end
-            #check if (Kvec, Ivec) gives zero row
+            # check if (Kvec, Ivec) gives zero row
             givesZeroRow = false
-            for index1 in 1:t-1    #if there is a basis which occurs twice subsequently: reduce using Projector-constraint
+            for index1 in 1:t-1    # if there is a basis which occurs twice subsequently: reduce using Projector-constraint
                 index2 = index1 + 1
                 if Kvec[index1] == Kvec[index2] && Ivec[index1] != Ivec[index2]
                     givesZeroRow = true
@@ -275,13 +275,13 @@ function CreateRelevantPQiPartitionsV2(d, k, t)
         end
         for Q in QPartitionslist
             Qdef = flatten(Q)
-            #Make sure that if P consists of only one part, we still consider Q as a collection [Q_1].
+            # Make sure that if P consists of only one part, we still consider Q as a collection [Q_1].
             if size(P, 1) == 1
                 Test = Any[]
                 push!(Test, Qdef)
                 Qdef = Test
             end
-            #Create Kvec and Ivec out of P,Qdef.
+            # Create Kvec and Ivec out of P,Qdef.
             Kvec = zeros(Int, t)
             Ivec = zeros(Int, t)
             piindex = 0
@@ -296,10 +296,10 @@ function CreateRelevantPQiPartitionsV2(d, k, t)
                 end
                 Ivec[Pi] .= IvecPart
             end
-            #check if (Kvec, Ivec) gives zero row
+            # check if (Kvec, Ivec) gives zero row
             givesZeroRow = false
             index1 = 1
-            while index1 < length(Ivec)    #if there is a basis which occurs twice subsequently: reduce using Projector-constraint
+            while index1 < length(Ivec)    # if there is a basis which occurs twice subsequently: reduce using Projector-constraint
                 index2 = index1 + 1
                 index3 = index1 + 2
                 if Kvec[index1] == Kvec[index2] && Ivec[index1] != Ivec[index2]
@@ -310,7 +310,7 @@ function CreateRelevantPQiPartitionsV2(d, k, t)
                     deleteat!(Kvec, index1)
                     deleteat!(Ivec, index1)
                     index1 -= 1
-                elseif index3 <= length(Ivec) && Kvec[index1] == Kvec[index3] && Ivec[index1] == Ivec[index3] ##reduce X_{index1,k} X_{index2,l} X{index1,k} 
+                elseif index3 <= length(Ivec) && Kvec[index1] == Kvec[index3] && Ivec[index1] == Ivec[index3] ## reduce X_{index1,k} X_{index2,l} X{index1,k} 
                     deleteat!(Kvec, index2)
                     deleteat!(Ivec, index2)
                     index1 -= 1
@@ -341,8 +341,8 @@ function renumberIdependingOnKPartition(Ivec, KPartition)
     return Ivec
 end
 
-#makes a table of all monomials
-function GenMonNC(d, k, t) #Table of size (k*d)^t by 2*t
+# makes a table of all monomials
+function GenMonNC(d, k, t) # Table of size (k*d)^t by 2*t
     if t == 0
         return [0]
     end
@@ -361,8 +361,8 @@ function GenMonNC(d, k, t) #Table of size (k*d)^t by 2*t
     return T
 end
 
-#makes a table of all monomials
-function GenMonNCOnlyK(d, k, t) #Table of size (k)^t by t
+# makes a table of all monomials
+function GenMonNCOnlyK(d, k, t) # Table of size (k)^t by t
     if t == 0
         return [0]
     end
@@ -380,7 +380,7 @@ function printCoefficient(coefficient)
     printprecision = 20
     coefficientstring = toString(coefficient, printprecision)
     coefficientstring = coefficientstring[1:min(sizeof(coefficientstring), printprecision)]
-    #delete trailing zeros
+    # delete trailing zeros
     if occursin(".", coefficientstring)
         digit = coefficientstring[end]
         while (cmp(digit, '0') == 0 || cmp(digit, '.') == 0)

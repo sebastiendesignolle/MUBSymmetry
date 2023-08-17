@@ -1,3 +1,3 @@
 using MUBSymmetry
 
-MUBWriteSDPA(2, 2, 2)
+MUBWriteSDPA(3, 5, 3; option=true)
